@@ -1,0 +1,17 @@
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/
+.idea/
+
+# Local logs and temporary screenshots
+*.log
+*.tmp
+luminous-tide-prototype.png
+
+# Node dependencies, in case this prototype is later migrated
+node_modules/
+dist/
+build/
