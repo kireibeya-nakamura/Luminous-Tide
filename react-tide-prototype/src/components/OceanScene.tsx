@@ -1,22 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { EffortLog, ParticleBurst } from "../types";
+import LegacyOceanCanvas from "./LegacyOceanCanvas";
 import LogButton from "./LogButton";
-import Particles from "./Particles";
-import WaterSurface from "./WaterSurface";
 
 const INITIAL_LEVEL = 0.2;
 const LEVEL_STEP = 0.05;
 const MAX_LEVEL = 0.9;
 
-const logLabels = [
-  "制作",
-  "3DCG",
-  "水の表現",
-  "読書",
-  "観察メモ",
-  "ポートフォリオ",
-];
+const logLabels = ["制作", "3DCG", "水の表現", "読書", "観察メモ", "ポートフォリオ"];
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -65,7 +57,6 @@ export default function OceanScene() {
 
       velocityRef.current += acceleration * dt;
       levelRef.current = clamp(levelRef.current + velocityRef.current * dt, 0.08, MAX_LEVEL);
-
       waveImpulseRef.current = Math.max(0, waveImpulseRef.current - dt * 1.55);
 
       setDisplayLevel(levelRef.current);
@@ -91,7 +82,7 @@ export default function OceanScene() {
     setBurst({
       id,
       level: levelRef.current,
-      amount: 18,
+      amount: 22,
     });
     setLogs((current) =>
       [
@@ -102,7 +93,7 @@ export default function OceanScene() {
           createdAt: new Date(),
         },
         ...current,
-      ].slice(0, 3),
+      ].slice(0, 4),
     );
   }, []);
 
@@ -111,9 +102,7 @@ export default function OceanScene() {
   return (
     <main className="ocean-app" aria-label="Luminous Tide mobile interaction prototype">
       <section className="phone-stage">
-        <div className="night-glow" />
-        <Particles level={displayLevel} burst={burst} />
-        <WaterSurface level={displayLevel} impulse={waveImpulse} />
+        <LegacyOceanCanvas level={displayLevel} impulse={waveImpulse} burst={burst} />
 
         <header className="top-bar" aria-label="画面操作">
           <button className="icon-button" type="button" aria-label="メニュー">
@@ -128,12 +117,12 @@ export default function OceanScene() {
 
         <section className="hero-copy" aria-label="プロトタイプ概要">
           <p className="eyebrow">Luminous Tide</p>
-          <h1>今日の努力が、静かに満ちていく。</h1>
+          <h1>今日の努力が、静かな海に沈んでいく。</h1>
         </section>
 
         <section className="log-stack" aria-label="最近の記録">
           {logs.length === 0 ? (
-            <p className="empty-log">記録すると、水面が少しだけ持ち上がります。</p>
+            <p className="empty-log">記録すると、水面が少し持ち上がり、光が増えます。</p>
           ) : (
             logs.map((log, index) => (
               <article className="log-card" style={{ "--i": index } as CSSProperties} key={log.id}>
