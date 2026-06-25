@@ -11,6 +11,7 @@ const streakDaysEl = document.querySelector("#streakDays");
 const resetButton = document.querySelector("#resetButton");
 const tiltButton = document.querySelector("#tiltButton");
 const recordPanel = document.querySelector("#recordPanel");
+const recordScrim = document.querySelector("#recordScrim");
 const openRecordButton = document.querySelector("#openRecordButton");
 const closeRecordButton = document.querySelector("#closeRecordButton");
 
@@ -954,12 +955,14 @@ pointerTarget.addEventListener("pointercancel", (event) => {
 
 function openRecordPanel() {
   recordPanel?.classList.remove("is-absorbing");
+  recordScrim?.classList.add("is-open");
   recordPanel?.classList.add("is-open");
   openRecordButton?.classList.add("is-hidden");
   openRecordButton?.setAttribute("aria-expanded", "true");
 }
 
 function closeRecordPanel() {
+  recordScrim?.classList.remove("is-open");
   recordPanel?.classList.remove("is-open", "is-absorbing");
   openRecordButton?.classList.remove("is-hidden");
   openRecordButton?.setAttribute("aria-expanded", "false");
@@ -978,6 +981,7 @@ function effortSourcePoint() {
 
 openRecordButton?.addEventListener("click", openRecordPanel);
 closeRecordButton?.addEventListener("click", closeRecordPanel);
+recordScrim?.addEventListener("click", closeRecordPanel);
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();

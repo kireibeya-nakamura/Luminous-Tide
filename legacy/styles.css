@@ -1,9 +1,9 @@
 :root {
   color-scheme: dark;
   --bg: #03060b;
-  --panel: rgba(5, 12, 22, 0.72);
-  --panel-strong: rgba(6, 14, 27, 0.88);
-  --line: rgba(118, 210, 255, 0.18);
+  --panel: rgba(5, 12, 22, 0.54);
+  --panel-strong: rgba(6, 14, 27, 0.72);
+  --line: rgba(139, 222, 255, 0.12);
   --text: #eef7ff;
   --muted: #9fb0c3;
   --cyan: #48e5ff;
@@ -11,7 +11,7 @@
   --violet: #8e6dff;
   --green: #70f4d0;
   --danger: #ff7d9c;
-  --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  --shadow: 0 22px 68px rgba(0, 0, 0, 0.34);
 }
 
 * {
@@ -76,11 +76,32 @@ button {
   touch-action: pan-y;
 }
 
+.record-scrim {
+  position: fixed;
+  z-index: 3;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(8, 22, 36, 0.18), rgba(0, 0, 0, 0.54) 78%),
+    rgba(0, 3, 9, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 520ms ease,
+    backdrop-filter 520ms ease;
+  backdrop-filter: blur(0);
+}
+
+.record-scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  backdrop-filter: blur(2px);
+}
+
 .panel {
   position: relative;
   z-index: 2;
   width: min(100%, 430px);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(139, 222, 255, 0.12);
   border-radius: 8px;
   background: var(--panel);
   box-shadow: var(--shadow);
@@ -100,25 +121,35 @@ button {
 }
 
 .record-panel {
-  position: absolute;
-  top: clamp(18px, 3vw, 36px);
-  right: clamp(18px, 3vw, 36px);
-  padding: 22px;
-  max-width: calc(100vw - 36px);
+  position: fixed;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  width: min(430px, calc(100vw - 32px));
+  max-height: min(78svh, 620px);
+  padding: 20px;
+  max-width: none;
   overflow-x: hidden;
+  overflow-y: auto;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(18px) scale(0.98);
-  transform-origin: 100% 0;
+  background: rgba(3, 10, 20, 0.54);
+  border-color: rgba(159, 229, 255, 0.14);
+  box-shadow:
+    0 26px 78px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  transform: translate(-50%, -43%) scale(0.92);
+  transform-origin: 50% 50%;
   transition:
-    opacity 360ms ease,
-    transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity 520ms ease,
+    transform 620ms cubic-bezier(0.18, 0.86, 0.18, 1);
+  backdrop-filter: blur(22px);
 }
 
 .record-panel.is-open {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0) scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .record-panel.is-absorbing {
@@ -131,18 +162,18 @@ button {
   left: 50%;
   bottom: calc(24px + env(safe-area-inset-bottom));
   min-height: 52px;
-  border: 1px solid rgba(118, 210, 255, 0.42);
+  border: 1px solid rgba(142, 224, 255, 0.24);
   border-radius: 999px;
   padding: 0 24px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(110, 240, 255, 0.24), transparent 62%),
-    rgba(4, 12, 23, 0.72);
+    radial-gradient(circle at 50% 0%, rgba(110, 240, 255, 0.16), transparent 62%),
+    rgba(4, 12, 23, 0.5);
   color: var(--text);
   font-weight: 760;
   letter-spacing: 0.04em;
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.42),
-    0 0 28px rgba(72, 229, 255, 0.18);
+    0 14px 38px rgba(0, 0, 0, 0.34),
+    0 0 22px rgba(72, 229, 255, 0.1);
   transform: translateX(-50%);
   backdrop-filter: blur(18px);
   transition:
@@ -154,10 +185,10 @@ button {
 
 .record-fab:hover,
 .record-fab:focus-visible {
-  border-color: rgba(118, 236, 255, 0.8);
+  border-color: rgba(118, 236, 255, 0.42);
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.42),
-    0 0 36px rgba(72, 229, 255, 0.28);
+    0 14px 38px rgba(0, 0, 0, 0.34),
+    0 0 28px rgba(72, 229, 255, 0.16);
 }
 
 .record-fab.is-hidden {
@@ -170,19 +201,19 @@ button {
   0% {
     opacity: 1;
     filter: brightness(1);
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 
   52% {
     opacity: 0.76;
     filter: brightness(1.22);
-    transform: translateY(8px) scale(0.99);
+    transform: translate(-50%, -48%) scale(0.99);
   }
 
   100% {
     opacity: 0;
     filter: brightness(0.8);
-    transform: translateY(28px) scale(0.96);
+    transform: translate(-50%, -44%) scale(0.96);
   }
 }
 
@@ -291,9 +322,9 @@ h3 {
 .text-button,
 .preset-row button,
 .category-group span {
-  border: 1px solid rgba(118, 210, 255, 0.2);
+  border: 1px solid rgba(147, 226, 255, 0.12);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.025);
   color: var(--text);
 }
 
@@ -301,7 +332,7 @@ h3 {
   flex: 0 0 auto;
   min-height: 38px;
   padding: 0 13px;
-  color: var(--cyan);
+  color: rgba(129, 231, 255, 0.72);
   white-space: nowrap;
 }
 
@@ -342,7 +373,7 @@ form {
   display: block;
   width: 100%;
   padding: 10px 12px;
-  color: var(--muted);
+  color: rgba(178, 202, 220, 0.72);
   text-align: center;
   transition:
     border-color 150ms ease,
@@ -352,10 +383,10 @@ form {
 }
 
 .category-group input:checked + span {
-  border-color: rgba(72, 229, 255, 0.75);
-  background: rgba(72, 229, 255, 0.12);
+  border-color: rgba(95, 229, 255, 0.38);
+  background: rgba(72, 229, 255, 0.07);
   color: var(--text);
-  box-shadow: inset 0 0 18px rgba(72, 229, 255, 0.12);
+  box-shadow: inset 0 0 16px rgba(72, 229, 255, 0.055);
 }
 
 .duration-row label {
@@ -367,9 +398,9 @@ form {
   display: flex;
   align-items: center;
   width: 150px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(147, 226, 255, 0.12);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.026);
   overflow: hidden;
 }
 
@@ -402,18 +433,20 @@ form {
 .preset-row button:hover,
 .ghost-button:hover,
 .text-button:hover {
-  border-color: rgba(72, 229, 255, 0.55);
+  border-color: rgba(72, 229, 255, 0.32);
   color: var(--text);
 }
 
 .primary-button {
   min-height: 46px;
-  border: 0;
+  border: 1px solid rgba(114, 234, 255, 0.28);
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--cyan), var(--blue));
-  color: #021018;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(139, 243, 255, 0.22), transparent 62%),
+    rgba(27, 133, 184, 0.34);
+  color: rgba(232, 250, 255, 0.92);
   font-weight: 760;
-  box-shadow: 0 16px 42px rgba(39, 137, 255, 0.22);
+  box-shadow: 0 12px 34px rgba(39, 137, 255, 0.11);
 }
 
 .primary-button:active {
@@ -422,7 +455,7 @@ form {
 
 .log-block {
   margin-top: 24px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgba(139, 222, 255, 0.1);
   padding-top: 18px;
 }
 
@@ -455,9 +488,9 @@ form {
   gap: 10px;
   min-width: 0;
   padding: 10px;
-  border: 1px solid rgba(118, 210, 255, 0.12);
+  border: 1px solid rgba(118, 210, 255, 0.09);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(255, 255, 255, 0.022);
 }
 
 .log-dot {
@@ -511,8 +544,7 @@ form {
     overflow-y: hidden;
   }
 
-  .intro-panel,
-  .record-panel {
+  .intro-panel {
     position: relative;
     top: auto;
     right: auto;
@@ -535,24 +567,25 @@ form {
   .record-panel {
     position: fixed;
     z-index: 4;
-    top: auto;
-    right: 12px;
-    bottom: calc(18px + env(safe-area-inset-bottom));
-    left: 12px;
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: min(420px, calc(100vw - 28px));
     order: 3;
-    max-height: min(72svh, 620px);
+    max-height: min(78svh, 620px);
     max-width: none;
     margin-top: 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     touch-action: pan-y;
-    transform: translateY(22px) scale(0.97);
-    transform-origin: 50% 100%;
+    transform: translate(-50%, -43%) scale(0.92);
+    transform-origin: 50% 50%;
   }
 
   .record-panel.is-open {
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -573,8 +606,8 @@ form {
   }
 
   .record-panel {
-    width: calc(100vw - 20px) !important;
-    max-width: calc(100vw - 20px) !important;
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px) !important;
     justify-self: stretch;
     margin-right: 0;
     margin-left: 0;
@@ -589,13 +622,14 @@ form {
   }
 
   .record-panel {
-    right: 10px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
-    left: 10px;
-    width: auto !important;
-    max-width: none !important;
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px) !important;
     margin-top: 0;
-    background: rgba(5, 12, 22, 0.86);
+    background: rgba(3, 10, 20, 0.58);
   }
 
   .record-panel,
