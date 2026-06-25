@@ -46,13 +46,12 @@ let lastTime = performance.now();
 let visualEnergy = 0;
 let flowX = 0;
 let flowY = 0;
-let diveRevealTimer = 0;
-let diveCleanupTimer = 0;
 let diveProgress = 0;
 let diveTarget = 0;
 
-const DIVE_REVEAL_MS = 1000;
-const DIVE_RETURN_MS = 900;
+const DIVE_IN_RATE = 1 / 2.4; // seconds to slowly sink through the surface
+const DIVE_OUT_RATE = 1 / 1.5; // seconds to resurface
+const DIVE_LINE_TOP = 44; // where the kept surface line settles (px from top)
 
 const pointer = {
   x: 0,
@@ -945,13 +944,39 @@ function drawDepthShade(bounds, time = 0) {
   ctx.restore();
 }
 
+function updateDiveStage() {
+  if (!appShell?.classList.contains("is-diving")) return;
+
+  // Reveal the Dive Log only once we have sunk past the surface line.
+  if (
+    diveTarget === 1 &&
+    diveProgress > 0.82 &&
+    !diveView?.classList.contains("is-open")
+  ) {
+    diveView?.classList.add("is-open");
+    diveView?.setAttribute("aria-hidden", "false");
+  }
+
+  // Once fully resurfaced, clear the dive state.
+  if (diveTarget === 0 && diveProgress <= 0.0001) {
+    appShell.classList.remove("is-diving", "is-dive-returning");
+    diveView?.setAttribute("aria-hidden", "true");
+    if (diveLogList) diveLogList.scrollTop = 0;
+    updateDiveScrollDepth();
+  }
+}
+
 function frame(now) {
   const dt = Math.min((now - lastTime) / 1000, 0.04);
   const time = now / 1000;
   lastTime = now;
 
-  diveProgress += (diveTarget - diveProgress) * Math.min(1, dt * 3.4);
-  if (diveTarget === 0 && diveProgress < 0.0008) diveProgress = 0;
+  if (diveTarget > diveProgress) {
+    diveProgress = Math.min(diveTarget, diveProgress + DIVE_IN_RATE * dt);
+  } else if (diveTarget < diveProgress) {
+    diveProgress = Math.max(diveTarget, diveProgress - DIVE_OUT_RATE * dt);
+  }
+  updateDiveStage();
 
   const m = metrics();
   const bounds = waterBounds();
@@ -959,14 +984,22 @@ function frame(now) {
   updateParticles(dt, time, bounds, m);
   updateTransient(dt);
 
+  const ease = diveProgress * diveProgress * (3 - 2 * diveProgress);
+  // Screen height the kept surface line has risen to as we sink past it.
+  const lineY = bounds.horizon - (bounds.horizon - DIVE_LINE_TOP) * ease;
+
+  // Clear in screen space first: while diving the scene is translated up, so the
+  // background fill no longer covers the bottom strip — this prevents ghosting.
+  if (diveProgress > 0.001) {
+    ctx.fillStyle = "#01040a";
+    ctx.fillRect(0, 0, width, height);
+  }
+
   ctx.save();
   if (diveProgress > 0.001) {
-    // Camera sinks toward the glowing line, zooms in, and pushes up through it.
-    const ease = diveProgress * diveProgress * (3 - 2 * diveProgress);
-    ctx.translate(width * 0.5, bounds.horizon);
-    ctx.scale(1 + ease * 0.42, 1 + ease * 0.42);
-    ctx.translate(-width * 0.5, -bounds.horizon);
-    ctx.translate(0, -ease * height * 0.5);
+    // Sink: the whole night sea lifts as the camera descends, carrying the
+    // glowing horizon up the screen until it becomes the water's cross-section.
+    ctx.translate(0, -(bounds.horizon - DIVE_LINE_TOP) * ease);
   }
 
   drawBackground(time, m);
@@ -978,18 +1011,17 @@ function frame(now) {
   ctx.restore();
 
   if (diveProgress > 0.001) {
-    const seal = clamp((diveProgress - 0.3) / 0.6, 0, 1);
-    if (seal > 0) {
-      const sealGrd = ctx.createLinearGradient(0, 0, 0, height);
-      sealGrd.addColorStop(0, "rgba(4, 17, 33, 1)");
-      sealGrd.addColorStop(0.5, "rgba(2, 9, 19, 1)");
-      sealGrd.addColorStop(1, "rgba(1, 4, 10, 1)");
-      ctx.save();
-      ctx.globalAlpha = seal * 0.92;
-      ctx.fillStyle = sealGrd;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
-    }
+    // Deepen the water below the line — we are sinking into the dark — while the
+    // bright line itself is kept as the surface seen from beneath.
+    const deep = clamp((diveProgress - 0.1) / 0.8, 0, 1);
+    const deepGrd = ctx.createLinearGradient(0, lineY, 0, height);
+    deepGrd.addColorStop(0, "rgba(3, 14, 28, 0)");
+    deepGrd.addColorStop(0.22, `rgba(2, 10, 20, ${0.55 * deep})`);
+    deepGrd.addColorStop(1, `rgba(0, 3, 9, ${0.98 * deep})`);
+    ctx.save();
+    ctx.fillStyle = deepGrd;
+    ctx.fillRect(0, lineY, width, height - lineY);
+    ctx.restore();
   }
 
   requestAnimationFrame(frame);
@@ -1101,48 +1133,23 @@ function openDiveView() {
   if (diveLogList) diveLogList.scrollTop = 0;
   updateDiveScrollDepth();
 
-  // Begin the canvas descent: plankton gather into the line, waves flatten to a
-  // single bright horizon, and the camera sinks through it. The Dive Log is
-  // revealed only afterwards, as one quiet fade.
+  // Begin the slow canvas descent: plankton gather into the line, waves flatten
+  // to a single bright horizon that rises into the water's cross-section. The
+  // Dive Log is revealed by updateDiveStage() once we have sunk past it.
   appShell?.classList.add("is-diving");
   diveTarget = 1;
   flowY = Math.min(1.2, flowY + 0.3);
-
-  window.clearTimeout(diveRevealTimer);
-  window.clearTimeout(diveCleanupTimer);
-  diveRevealTimer = window.setTimeout(() => {
-    diveView?.classList.add("is-open");
-    diveView?.setAttribute("aria-hidden", "false");
-    diveRevealTimer = 0;
-  }, DIVE_REVEAL_MS);
 }
 
 function closeDiveView() {
-  if (
-    !appShell?.classList.contains("is-diving") ||
-    appShell?.classList.contains("is-dive-returning")
-  ) {
-    return;
-  }
+  if (!appShell?.classList.contains("is-diving")) return;
 
-  window.clearTimeout(diveRevealTimer);
-  window.clearTimeout(diveCleanupTimer);
-  diveRevealTimer = 0;
-
-  // Resurface: the log fades out, plankton disperse, and the camera rises back
-  // up to the night sea.
+  // Resurface: the log fades out now, the camera rises back up, and
+  // updateDiveStage() clears the dive state once we reach the surface again.
   diveView?.classList.remove("is-open");
   appShell?.classList.add("is-dive-returning");
   openDiveButton?.setAttribute("aria-expanded", "false");
   diveTarget = 0;
-
-  diveCleanupTimer = window.setTimeout(() => {
-    appShell?.classList.remove("is-diving", "is-dive-returning");
-    diveView?.setAttribute("aria-hidden", "true");
-    if (diveLogList) diveLogList.scrollTop = 0;
-    updateDiveScrollDepth();
-    diveCleanupTimer = 0;
-  }, DIVE_RETURN_MS);
 }
 
 function effortSourcePoint() {
