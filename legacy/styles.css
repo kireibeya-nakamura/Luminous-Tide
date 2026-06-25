@@ -393,12 +393,20 @@ form {
 }
 
 @media (max-width: 920px) {
+  html,
+  body {
+    height: auto;
+    min-height: 210svh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .app-shell {
     display: grid;
     grid-template-columns: 1fr;
     align-content: start;
     gap: 12px;
-    min-height: 190svh;
+    min-height: 210svh;
     padding:
       calc(12px + env(safe-area-inset-top))
       12px
@@ -443,6 +451,12 @@ form {
 }
 
 @media (max-width: 520px) {
+  html,
+  body,
+  .app-shell {
+    min-height: 220svh;
+  }
+
   .app-shell {
     gap: 10px;
     padding:
