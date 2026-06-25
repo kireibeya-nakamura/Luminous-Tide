@@ -157,7 +157,8 @@ button {
   left: 18px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 12px;
 }
 
 .icon-button {
@@ -292,7 +293,7 @@ h1 {
   bottom: calc(14px + env(safe-area-inset-bottom));
   left: 14px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   gap: 12px;
   align-items: center;
   border: 1px solid rgba(127, 214, 255, 0.13);
@@ -335,6 +336,7 @@ h1 {
 }
 
 .record-button {
+  width: 100%;
   min-width: 112px;
   min-height: 52px;
   border: 1px solid rgba(151, 232, 255, 0.3);
