@@ -178,6 +178,15 @@ function isInsideWater(x, y, bounds = waterBounds()) {
   return x >= 0 && x <= width && y >= surfaceY(x, bounds) - 12 && y <= bounds.bottom;
 }
 
+function waterDepthAt(x, y, bounds = waterBounds(), time = 0) {
+  const top = surfaceY(x, bounds, time);
+  return clamp((y - top) / Math.max(1, bounds.bottom - top), 0, 1);
+}
+
+function perspectiveScale(depth) {
+  return 0.28 + depth ** 1.38 * 1.18;
+}
+
 function randomPointInWater(bounds = waterBounds()) {
   const x = Math.random() * width;
   const top = surfaceY(x, bounds) + 12;
@@ -695,11 +704,13 @@ function drawParticles(bounds, time, m) {
   ctx.globalCompositeOperation = "lighter";
 
   for (const p of particles) {
+    const depth = waterDepthAt(p.x, p.y, bounds, time);
+    const depthScale = perspectiveScale(depth);
     const pulse = 0.62 + Math.sin(time * p.pulse + p.phase) * 0.34;
-    const alpha = clamp(0.13 + m.glow * 0.08 + pulse * 0.22, 0.12, 0.86);
-    const radius = p.size * (0.8 + pulse * 0.45);
+    const alpha = clamp((0.045 + depth * 0.22 + m.glow * 0.035 + pulse * 0.1) * (0.72 + depth * 0.48), 0.035, 0.72);
+    const radius = p.size * depthScale * (0.72 + pulse * 0.34);
     ctx.shadowColor = `hsla(${p.hue}, 100%, 66%, ${alpha})`;
-    ctx.shadowBlur = mobile ? 4 + m.glow * 1.4 : 10 + m.glow * 5;
+    ctx.shadowBlur = mobile ? 1.5 + depth * 5 + m.glow * 0.9 : 5 + depth * 10 + m.glow * 3;
     ctx.fillStyle = `hsla(${p.hue}, 100%, 70%, ${alpha})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
@@ -707,12 +718,14 @@ function drawParticles(bounds, time, m) {
   }
 
   for (const p of burstParticles) {
+    const depth = waterDepthAt(p.x, p.y, bounds, time);
+    const depthScale = perspectiveScale(depth);
     const alpha = clamp(p.life / p.maxLife, 0, 1);
     ctx.shadowColor = `hsla(${p.hue}, 100%, 68%, ${alpha})`;
-    ctx.shadowBlur = mobile ? 7 : 16;
-    ctx.fillStyle = `hsla(${p.hue}, 100%, 72%, ${alpha})`;
+    ctx.shadowBlur = mobile ? 3 + depth * 6 : 8 + depth * 10;
+    ctx.fillStyle = `hsla(${p.hue}, 100%, 72%, ${alpha * (0.62 + depth * 0.44)})`;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, p.size * depthScale * alpha, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -760,11 +773,13 @@ function drawRipples(bounds, time = 0) {
   ctx.globalCompositeOperation = "lighter";
 
   for (const trail of trails) {
-    const alpha = trail.life / trail.maxLife;
-    ctx.shadowBlur = 24;
+    const depth = waterDepthAt(trail.x, trail.y, bounds, time);
+    const depthScale = perspectiveScale(depth);
+    const alpha = (trail.life / trail.maxLife) * (0.42 + depth * 0.72);
+    ctx.shadowBlur = 6 + depth * 14;
     ctx.shadowColor = `rgba(84, 235, 255, ${alpha})`;
     ctx.strokeStyle = `rgba(84, 235, 255, ${alpha * 0.45})`;
-    ctx.lineWidth = 5 * alpha;
+    ctx.lineWidth = Math.max(0.6, 4.2 * alpha * depthScale);
     ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(trail.px, trail.py);
@@ -778,17 +793,21 @@ function drawRipples(bounds, time = 0) {
   }
 
   for (const ripple of ripples) {
-    const alpha = ripple.life / ripple.maxLife;
-    ctx.shadowBlur = 22;
+    const depth = waterDepthAt(ripple.x, ripple.y, bounds, time);
+    const depthScale = perspectiveScale(depth);
+    const alpha = (ripple.life / ripple.maxLife) * (0.4 + depth * 0.75);
+    const wide = ripple.radius * (0.42 + depth * 1.7) * (0.85 + ripple.strength * 0.12);
+    const flat = ripple.radius * (0.035 + depth * 0.34) * (0.86 + ripple.strength * 0.08);
+    ctx.shadowBlur = 5 + depth * 15;
     ctx.shadowColor = `rgba(83, 232, 255, ${alpha})`;
     ctx.strokeStyle = `rgba(83, 232, 255, ${alpha * 0.62})`;
-    ctx.lineWidth = 1.3 + ripple.strength * alpha;
+    ctx.lineWidth = (0.55 + ripple.strength * alpha) * (0.45 + depthScale * 0.55);
     ctx.beginPath();
     ctx.ellipse(
       ripple.x,
       ripple.y,
-      ripple.radius * 1.35,
-      ripple.radius * 0.56,
+      wide,
+      flat,
       0,
       0,
       Math.PI * 2,
@@ -796,13 +815,13 @@ function drawRipples(bounds, time = 0) {
     ctx.stroke();
 
     ctx.strokeStyle = `rgba(148, 120, 255, ${alpha * 0.35})`;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = Math.max(0.45, depthScale * 0.75);
     ctx.beginPath();
     ctx.ellipse(
       ripple.x,
       ripple.y,
-      ripple.radius * 0.65,
-      ripple.radius * 0.28,
+      wide * 0.48,
+      flat * 0.5,
       0,
       0,
       Math.PI * 2,
