@@ -49,8 +49,8 @@ let flowY = 0;
 let diveRevealTimer = 0;
 let diveCleanupTimer = 0;
 
-const DIVE_REVEAL_MS = 1450;
-const DIVE_TRAVEL_MS = 2380;
+const DIVE_REVEAL_MS = 980;
+const DIVE_TRAVEL_MS = 2000;
 
 const pointer = {
   x: 0,

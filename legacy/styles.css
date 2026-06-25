@@ -65,11 +65,11 @@ button {
   background:
     radial-gradient(circle at 50% 75%, rgba(14, 92, 142, 0.25), transparent 34%),
     linear-gradient(180deg, #02030a 0%, #06111f 52%, #02050a 100%);
-  transform-origin: 50% 48%;
+  transform-origin: 50% 40%;
   transition:
-    filter 2100ms ease,
-    opacity 2100ms ease,
-    transform 2300ms cubic-bezier(0.2, 0.78, 0.16, 1);
+    filter 1500ms ease,
+    opacity 1500ms ease,
+    transform 1600ms cubic-bezier(0.2, 0.78, 0.16, 1);
 }
 
 .gesture-layer {
@@ -206,13 +206,13 @@ button {
 }
 
 .app-shell.is-dive-transitioning #tideCanvas {
-  opacity: 0.74;
-  filter: brightness(0.38) saturate(0.86) blur(0.45px);
-  transform: translateY(-32svh) scale(1.12);
+  opacity: 0.4;
+  filter: brightness(0.3) saturate(0.8) blur(0.6px);
+  transform: translateY(7svh) scale(1.16);
 }
 
 .app-shell.is-dive-returning #tideCanvas {
-  animation: dive-canvas-return 2300ms cubic-bezier(0.2, 0.78, 0.16, 1) both;
+  animation: dive-canvas-return 1600ms cubic-bezier(0.2, 0.78, 0.16, 1) both;
 }
 
 .app-shell.is-dive-transitioning .gesture-layer,
@@ -357,33 +357,33 @@ button {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 48% 72%, rgba(48, 177, 255, 0.12), transparent 28%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(1, 5, 12, 0.24) 44%, rgba(0, 1, 5, 0.72) 100%);
-  transform: translateY(26%);
+    radial-gradient(circle at 50% 10%, rgba(118, 205, 255, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(2, 10, 20, 0) 0%, rgba(1, 7, 16, 0.78) 34%, rgba(0, 2, 8, 0.98) 100%);
+  transform: translateY(34%);
 }
 
 .app-shell.is-dive-transitioning .dive-transition {
-  animation: dive-camera-drop 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-camera-drop 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .app-shell.is-dive-transitioning .dive-transition-surface {
-  animation: dive-surface-pass 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-surface-pass 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .app-shell.is-dive-transitioning .dive-transition-depth {
-  animation: dive-depth-pass 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-depth-pass 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .app-shell.is-dive-returning .dive-transition {
-  animation: dive-camera-rise 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-camera-rise 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .app-shell.is-dive-returning .dive-transition-surface {
-  animation: dive-surface-return 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-surface-return 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .app-shell.is-dive-returning .dive-transition-depth {
-  animation: dive-depth-return 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-depth-return 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .dive-fab.is-hidden,
@@ -421,10 +421,10 @@ button {
   color: var(--text);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(20svh) scale(1.04);
+  transform: translateY(8svh) scale(1.03);
   transition:
-    opacity 1250ms ease,
-    transform 1650ms cubic-bezier(0.18, 0.86, 0.18, 1);
+    opacity 1100ms ease,
+    transform 1500ms cubic-bezier(0.18, 0.86, 0.18, 1);
 }
 
 .dive-view.is-open {
@@ -433,13 +433,41 @@ button {
   transform: translateY(0) scale(1);
 }
 
+/* Dive Log content stays hidden during the descent, then rises in
+   quietly only after the surface has been crossed. */
+.dive-header,
+.dive-log-wrap {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 900ms ease,
+    transform 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dive-view.is-open .dive-header {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 1050ms;
+}
+
+.dive-view.is-open .dive-log-wrap {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 1260ms;
+}
+
+.app-shell.is-dive-returning .dive-header,
+.app-shell.is-dive-returning .dive-log-wrap {
+  transition-delay: 0ms;
+}
+
 .app-shell.is-dive-returning .dive-view.is-open {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(18svh) scale(1.035);
+  transform: translateY(8svh) scale(1.03);
   transition:
-    opacity 1200ms ease 180ms,
-    transform 1850ms cubic-bezier(0.2, 0.78, 0.16, 1);
+    opacity 1000ms ease 120ms,
+    transform 1600ms cubic-bezier(0.2, 0.78, 0.16, 1);
 }
 
 .dive-view::before {
@@ -744,127 +772,140 @@ button {
 @keyframes dive-camera-drop {
   0% {
     opacity: 0;
-    filter: brightness(1);
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
 
-  16% {
-    opacity: 0.34;
+  14% {
+    opacity: 1;
   }
 
-  58% {
-    opacity: 0.86;
-    filter: brightness(0.78);
-    transform: translateY(-16px) scale(1.035);
+  100% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* The bright horizon line drifts to screen-centre, sharpens into a single
+   line, blooms at the moment of crossing, then sweeps up past the viewport. */
+@keyframes dive-surface-pass {
+  0% {
+    opacity: 0.7;
+    filter: brightness(0.9);
+    transform: translateY(0) scaleY(0.9);
+  }
+
+  38% {
+    opacity: 1;
+    filter: brightness(1.3);
+    transform: translateY(10svh) scaleY(1);
+  }
+
+  54% {
+    opacity: 1;
+    filter: brightness(2);
+    transform: translateY(13svh) scaleY(1.1);
+  }
+
+  70% {
+    opacity: 0.5;
+    filter: brightness(1.3);
+    transform: translateY(-6svh) scaleY(1);
   }
 
   100% {
     opacity: 0;
-    filter: brightness(0.42);
-    transform: translateY(-44px) scale(1.07);
+    filter: brightness(1);
+    transform: translateY(-46svh) scaleY(0.9);
   }
 }
 
-@keyframes dive-surface-pass {
-  0% {
-    opacity: 0.86;
-    transform: translateY(0) scaleY(0.82);
-  }
-
-  26% {
-    opacity: 0.82;
-    transform: translateY(-10svh) scaleY(0.92);
-  }
-
-  72% {
-    opacity: 0.58;
-    transform: translateY(-36svh) scaleY(1);
-  }
-
-  100% {
-    opacity: 0.06;
-    transform: translateY(-58svh) scaleY(1.08);
-  }
-}
-
+/* Darkness rises from below like water flooding up, sealing over at the cross. */
 @keyframes dive-depth-pass {
   0% {
     opacity: 0;
-    transform: translateY(22%);
+    transform: translateY(34%);
   }
 
-  56% {
-    opacity: 0.72;
+  40% {
+    opacity: 0.4;
+    transform: translateY(16%);
+  }
+
+  60% {
+    opacity: 0.92;
+    transform: translateY(2%);
   }
 
   100% {
-    opacity: 0.18;
-    transform: translateY(-12%);
+    opacity: 1;
+    transform: translateY(0%);
   }
 }
 
 @keyframes dive-camera-rise {
   0% {
-    opacity: 0.18;
-    filter: brightness(0.5);
-    transform: translateY(-44px) scale(1.07);
+    opacity: 1;
+    transform: scale(1.06);
   }
 
-  42% {
-    opacity: 0.84;
-    filter: brightness(0.78);
+  44% {
+    opacity: 1;
   }
 
   100% {
     opacity: 0;
-    filter: brightness(1);
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
 }
 
 @keyframes dive-surface-return {
   0% {
-    opacity: 0.06;
-    transform: translateY(-58svh) scaleY(1.08);
+    opacity: 0;
+    filter: brightness(1);
+    transform: translateY(-46svh) scaleY(0.9);
   }
 
-  34% {
-    opacity: 0.46;
-    transform: translateY(-35svh) scaleY(1);
+  40% {
+    opacity: 0.7;
+    filter: brightness(1.3);
+    transform: translateY(-6svh) scaleY(1);
   }
 
-  72% {
-    opacity: 0.78;
-    transform: translateY(-8svh) scaleY(0.92);
+  70% {
+    opacity: 0.95;
+    filter: brightness(1.1);
+    transform: translateY(10svh) scaleY(1.02);
   }
 
   100% {
-    opacity: 0.86;
-    transform: translateY(0) scaleY(0.82);
+    opacity: 0.7;
+    filter: brightness(0.9);
+    transform: translateY(0) scaleY(0.9);
   }
 }
 
 @keyframes dive-depth-return {
   0% {
-    opacity: 0.16;
-    transform: translateY(-12%);
+    opacity: 1;
+    transform: translateY(0%);
   }
 
-  46% {
-    opacity: 0.72;
+  50% {
+    opacity: 0.5;
+    transform: translateY(16%);
   }
 
   100% {
     opacity: 0;
-    transform: translateY(22%);
+    transform: translateY(34%);
   }
 }
 
 @keyframes dive-canvas-return {
   0% {
-    opacity: 0.74;
-    filter: brightness(0.38) saturate(0.86) blur(0.45px);
-    transform: translateY(-32svh) scale(1.12);
+    opacity: 0.4;
+    filter: brightness(0.3) saturate(0.8) blur(0.6px);
+    transform: translateY(7svh) scale(1.16);
   }
 
   100% {
