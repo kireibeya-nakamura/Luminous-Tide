@@ -65,11 +65,11 @@ button {
   background:
     radial-gradient(circle at 50% 75%, rgba(14, 92, 142, 0.25), transparent 34%),
     linear-gradient(180deg, #02030a 0%, #06111f 52%, #02050a 100%);
-  transform-origin: 50% 40%;
+  transform-origin: 50% 46%;
   transition:
-    filter 1500ms ease,
-    opacity 1500ms ease,
-    transform 1600ms cubic-bezier(0.2, 0.78, 0.16, 1);
+    filter 1600ms ease,
+    opacity 1400ms ease,
+    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1);
 }
 
 .gesture-layer {
@@ -205,14 +205,16 @@ button {
   transform: translate(-50%, 12px) scale(0.96);
 }
 
+/* The above-water world rises up and past the camera as we sink below it:
+   a gentle forward push (scale) while it lifts fully out of view. */
 .app-shell.is-dive-transitioning #tideCanvas {
-  opacity: 0.4;
-  filter: brightness(0.3) saturate(0.8) blur(0.6px);
-  transform: translateY(7svh) scale(1.16);
+  opacity: 0.32;
+  filter: brightness(0.36) saturate(0.82) blur(0.8px);
+  transform: translateY(-104svh) scale(1.2);
 }
 
 .app-shell.is-dive-returning #tideCanvas {
-  animation: dive-canvas-return 1600ms cubic-bezier(0.2, 0.78, 0.16, 1) both;
+  animation: dive-canvas-return 1800ms cubic-bezier(0.45, 0.05, 0.3, 1) both;
 }
 
 .app-shell.is-dive-transitioning .gesture-layer,
@@ -223,19 +225,28 @@ button {
 
 .app-shell.is-dive-transitioning .intro-panel {
   opacity: 0;
-  transform: translateY(-92px);
+  transform: translateY(-46svh);
+  transition:
+    opacity 1100ms ease,
+    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1);
 }
 
 .app-shell.is-dive-transitioning .record-fab {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -116px) scale(0.94);
+  transform: translate(-50%, -46svh) scale(0.94);
+  transition:
+    opacity 1100ms ease,
+    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1);
 }
 
 .app-shell.is-dive-transitioning .dive-fab {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-112px) scale(0.92);
+  transform: translateY(-46svh) scale(0.92);
+  transition:
+    opacity 1100ms ease,
+    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1);
 }
 
 .dive-fab {
@@ -284,6 +295,8 @@ button {
     inset 0 1px 0 rgba(255, 255, 255, 0.055);
 }
 
+/* A single bright line at screen-centre that blooms only at the instant the
+   two layers meet — the moment of crossing the surface. */
 .dive-transition {
   position: fixed;
   z-index: 6;
@@ -291,120 +304,56 @@ button {
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(24px) scale(1.02);
 }
 
 .dive-transition::before {
   position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 52% 18%, rgba(177, 231, 255, 0.16), transparent 28%),
-    linear-gradient(180deg, rgba(4, 15, 27, 0) 0%, rgba(3, 13, 25, 0.42) 46%, rgba(0, 3, 9, 0.94) 100%);
-  content: "";
-}
-
-.dive-transition-surface {
-  position: absolute;
-  top: 37svh;
-  left: -14%;
-  width: 128%;
-  height: 96px;
-  border-top: 0;
-  border-bottom: 0;
-  background:
-    radial-gradient(ellipse at 52% 50%, rgba(164, 225, 255, 0.18), transparent 48%),
-    linear-gradient(180deg, rgba(67, 163, 221, 0), rgba(67, 163, 221, 0.14) 48%, rgba(4, 14, 25, 0));
-  box-shadow:
-    0 -12px 28px rgba(107, 210, 255, 0.08),
-    0 14px 44px rgba(0, 0, 0, 0.22);
-  opacity: 0.78;
-}
-
-.dive-transition-surface::before {
-  position: absolute;
-  top: 46px;
+  top: 50%;
   left: 0;
   width: 100%;
   height: 2px;
   background: linear-gradient(
     90deg,
-    rgba(92, 183, 231, 0.02),
-    rgba(122, 226, 255, 0.58) 44%,
-    rgba(180, 152, 255, 0.18) 62%,
-    rgba(92, 183, 231, 0.02)
+    rgba(92, 183, 231, 0),
+    rgba(150, 232, 255, 0.95) 44%,
+    rgba(190, 162, 255, 0.5) 62%,
+    rgba(92, 183, 231, 0)
   );
-  border-radius: 999px;
   box-shadow:
-    0 0 18px rgba(88, 220, 255, 0.24),
-    0 8px 22px rgba(22, 122, 190, 0.14);
+    0 0 30px rgba(120, 220, 255, 0.75),
+    0 0 64px rgba(96, 196, 255, 0.4);
   content: "";
-  animation: surface-horizon-breathe 6s ease-in-out infinite;
+  transform: translateY(-50%);
 }
 
-.dive-transition-surface::after {
+.dive-transition::after {
   position: absolute;
-  top: 48px;
-  left: 0;
-  width: 100%;
-  height: 56px;
-  background:
-    radial-gradient(ellipse at 48% 0%, rgba(115, 214, 255, 0.12), transparent 54%),
-    linear-gradient(180deg, rgba(67, 163, 221, 0.16), rgba(4, 14, 25, 0));
+  top: 50%;
+  left: 50%;
+  width: min(78vw, 520px);
+  height: 220px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(150, 226, 255, 0.28), transparent 64%);
   content: "";
-}
-
-.dive-transition-depth {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 50% 10%, rgba(118, 205, 255, 0.1), transparent 30%),
-    linear-gradient(180deg, rgba(2, 10, 20, 0) 0%, rgba(1, 7, 16, 0.78) 34%, rgba(0, 2, 8, 0.98) 100%);
-  transform: translateY(34%);
+  transform: translate(-50%, -50%);
 }
 
 .app-shell.is-dive-transitioning .dive-transition {
-  animation: dive-camera-drop 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
-}
-
-.app-shell.is-dive-transitioning .dive-transition-surface {
-  animation: dive-surface-pass 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
-}
-
-.app-shell.is-dive-transitioning .dive-transition-depth {
-  animation: dive-depth-pass 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-cross-flash 1800ms cubic-bezier(0.45, 0.05, 0.3, 1) both;
 }
 
 .app-shell.is-dive-returning .dive-transition {
-  animation: dive-camera-rise 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-cross-flash 1800ms cubic-bezier(0.45, 0.05, 0.3, 1) reverse both;
 }
 
-.app-shell.is-dive-returning .dive-transition-surface {
-  animation: dive-surface-return 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
-}
-
-.app-shell.is-dive-returning .dive-transition-depth {
-  animation: dive-depth-return 2000ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
-}
-
-.dive-fab.is-hidden,
-.app-shell.is-diving .record-fab,
-.app-shell.is-diving .dive-fab,
-.app-shell.is-dive-returning .record-fab,
-.app-shell.is-dive-returning .dive-fab,
-.app-shell.is-dive-returning .intro-panel,
-.app-shell.is-diving .intro-panel {
+.dive-fab.is-hidden {
   opacity: 0;
   pointer-events: none;
 }
 
-.app-shell.is-diving .record-fab {
-  transform: translate(-50%, 16px) scale(0.96);
-}
-
-.app-shell.is-diving .dive-fab {
-  transform: translateY(16px) scale(0.94);
-}
-
+/* The underwater layer is a real space stacked below the viewport. It rises
+   up from beneath in lockstep with the above-water world lifting away, so the
+   camera travels continuously down through the surface into it — no cross-fade,
+   no popup. */
 .dive-view {
   --dive-scroll: 0;
   --dive-dark-opacity: 0;
@@ -419,16 +368,15 @@ button {
     radial-gradient(ellipse at 50% 0%, rgba(111, 194, 255, 0.16), transparent 30%),
     linear-gradient(180deg, rgba(6, 25, 43, 0.96) 0%, rgba(2, 9, 19, 0.98) 48%, #01040a 100%);
   color: var(--text);
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
-  transform: translateY(8svh) scale(1.03);
+  transform: translateY(104svh) scale(1.06);
   transition:
-    opacity 1100ms ease,
-    transform 1500ms cubic-bezier(0.18, 0.86, 0.18, 1);
+    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1),
+    opacity 500ms ease;
 }
 
 .dive-view.is-open {
-  opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
 }
@@ -438,36 +386,27 @@ button {
 .dive-header,
 .dive-log-wrap {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(18px);
   transition:
-    opacity 900ms ease,
-    transform 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity 800ms ease,
+    transform 1000ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dive-view.is-open .dive-header {
   opacity: 1;
   transform: translateY(0);
-  transition-delay: 1050ms;
+  transition-delay: 1150ms;
 }
 
 .dive-view.is-open .dive-log-wrap {
   opacity: 1;
   transform: translateY(0);
-  transition-delay: 1260ms;
+  transition-delay: 1320ms;
 }
 
 .app-shell.is-dive-returning .dive-header,
 .app-shell.is-dive-returning .dive-log-wrap {
   transition-delay: 0ms;
-}
-
-.app-shell.is-dive-returning .dive-view.is-open {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(8svh) scale(1.03);
-  transition:
-    opacity 1000ms ease 120ms,
-    transform 1600ms cubic-bezier(0.2, 0.78, 0.16, 1);
 }
 
 .dive-view::before {
@@ -769,143 +708,32 @@ button {
   }
 }
 
-@keyframes dive-camera-drop {
-  0% {
+/* The single bright line stays dark until the two layers meet at centre,
+   flares once as we cross the surface, then fades as we sink below it. */
+@keyframes dive-cross-flash {
+  0%,
+  34% {
     opacity: 0;
-    transform: scale(1);
-  }
-
-  14% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 1;
-    transform: scale(1.06);
-  }
-}
-
-/* The bright horizon line drifts to screen-centre, sharpens into a single
-   line, blooms at the moment of crossing, then sweeps up past the viewport. */
-@keyframes dive-surface-pass {
-  0% {
-    opacity: 0.7;
-    filter: brightness(0.9);
-    transform: translateY(0) scaleY(0.9);
-  }
-
-  38% {
-    opacity: 1;
-    filter: brightness(1.3);
-    transform: translateY(10svh) scaleY(1);
-  }
-
-  54% {
-    opacity: 1;
-    filter: brightness(2);
-    transform: translateY(13svh) scaleY(1.1);
-  }
-
-  70% {
-    opacity: 0.5;
-    filter: brightness(1.3);
-    transform: translateY(-6svh) scaleY(1);
-  }
-
-  100% {
-    opacity: 0;
-    filter: brightness(1);
-    transform: translateY(-46svh) scaleY(0.9);
-  }
-}
-
-/* Darkness rises from below like water flooding up, sealing over at the cross. */
-@keyframes dive-depth-pass {
-  0% {
-    opacity: 0;
-    transform: translateY(34%);
-  }
-
-  40% {
-    opacity: 0.4;
-    transform: translateY(16%);
-  }
-
-  60% {
-    opacity: 0.92;
-    transform: translateY(2%);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0%);
-  }
-}
-
-@keyframes dive-camera-rise {
-  0% {
-    opacity: 1;
-    transform: scale(1.06);
-  }
-
-  44% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    transform: scale(1);
-  }
-}
-
-@keyframes dive-surface-return {
-  0% {
-    opacity: 0;
-    filter: brightness(1);
-    transform: translateY(-46svh) scaleY(0.9);
-  }
-
-  40% {
-    opacity: 0.7;
-    filter: brightness(1.3);
-    transform: translateY(-6svh) scaleY(1);
-  }
-
-  70% {
-    opacity: 0.95;
-    filter: brightness(1.1);
-    transform: translateY(10svh) scaleY(1.02);
-  }
-
-  100% {
-    opacity: 0.7;
-    filter: brightness(0.9);
-    transform: translateY(0) scaleY(0.9);
-  }
-}
-
-@keyframes dive-depth-return {
-  0% {
-    opacity: 1;
-    transform: translateY(0%);
   }
 
   50% {
-    opacity: 0.5;
-    transform: translateY(16%);
+    opacity: 1;
+  }
+
+  64% {
+    opacity: 0;
   }
 
   100% {
     opacity: 0;
-    transform: translateY(34%);
   }
 }
 
 @keyframes dive-canvas-return {
   0% {
-    opacity: 0.4;
-    filter: brightness(0.3) saturate(0.8) blur(0.6px);
-    transform: translateY(7svh) scale(1.16);
+    opacity: 0.32;
+    filter: brightness(0.36) saturate(0.82) blur(0.8px);
+    transform: translateY(-104svh) scale(1.2);
   }
 
   100% {
@@ -1377,13 +1205,12 @@ form {
     transform: none;
   }
 
-  .record-fab.is-hidden,
-  .app-shell.is-diving .record-fab {
+  .record-fab.is-hidden {
     transform: translateY(12px) scale(0.96);
   }
 
   .app-shell.is-dive-transitioning .record-fab {
-    transform: translateY(-116px) scale(0.94);
+    transform: translateY(-46svh) scale(0.94);
   }
 
   .dive-fab {

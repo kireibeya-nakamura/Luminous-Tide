@@ -46,11 +46,9 @@ let lastTime = performance.now();
 let visualEnergy = 0;
 let flowX = 0;
 let flowY = 0;
-let diveRevealTimer = 0;
 let diveCleanupTimer = 0;
 
-const DIVE_REVEAL_MS = 980;
-const DIVE_TRAVEL_MS = 2000;
+const DIVE_TRAVEL_MS = 1900;
 
 const pointer = {
   x: 0,
@@ -1059,52 +1057,39 @@ function openDiveView() {
   openDiveButton?.setAttribute("aria-expanded", "true");
   if (diveLogList) diveLogList.scrollTop = 0;
   updateDiveScrollDepth();
-  appShell?.classList.add("is-dive-transitioning");
+
+  // The above-water world lifts away and the underwater layer rises from below
+  // in lockstep — one continuous descent through the surface, started together.
+  appShell?.classList.add("is-diving", "is-dive-transitioning");
+  diveView?.classList.add("is-open");
+  diveView?.setAttribute("aria-hidden", "false");
+
   visualEnergy = Math.min(2.8, visualEnergy + 0.42);
   flowY = Math.min(1.2, flowY + 0.34);
 
-  window.clearTimeout(diveRevealTimer);
   window.clearTimeout(diveCleanupTimer);
-
-  diveRevealTimer = window.setTimeout(() => {
-    appShell?.classList.add("is-diving");
-    diveView?.classList.add("is-open");
-    diveView?.setAttribute("aria-hidden", "false");
-    updateDiveScrollDepth();
-  }, DIVE_REVEAL_MS);
-
   diveCleanupTimer = window.setTimeout(() => {
     appShell?.classList.remove("is-dive-transitioning");
-    diveRevealTimer = 0;
     diveCleanupTimer = 0;
   }, DIVE_TRAVEL_MS);
 }
 
 function closeDiveView() {
   if (appShell?.classList.contains("is-dive-returning")) return;
-  const isOpening = appShell?.classList.contains("is-dive-transitioning");
-  const isDiving = appShell?.classList.contains("is-diving");
-  if (!isOpening && !isDiving) return;
+  if (!appShell?.classList.contains("is-diving")) return;
 
-  window.clearTimeout(diveRevealTimer);
   window.clearTimeout(diveCleanupTimer);
-  diveRevealTimer = 0;
-  diveCleanupTimer = 0;
 
-  if (isOpening && !isDiving) {
-    appShell?.classList.remove("is-dive-transitioning");
-    openDiveButton?.setAttribute("aria-expanded", "false");
-    return;
-  }
-
+  // Resurface: the underwater layer sinks back below and the above-water world
+  // settles back into place.
   appShell?.classList.remove("is-dive-transitioning");
   appShell?.classList.add("is-dive-returning");
+  diveView?.classList.remove("is-open");
   openDiveButton?.setAttribute("aria-expanded", "false");
   updateDiveScrollDepth();
 
   diveCleanupTimer = window.setTimeout(() => {
     appShell?.classList.remove("is-dive-returning", "is-diving");
-    diveView?.classList.remove("is-open");
     diveView?.setAttribute("aria-hidden", "true");
     if (diveLogList) diveLogList.scrollTop = 0;
     updateDiveScrollDepth();
