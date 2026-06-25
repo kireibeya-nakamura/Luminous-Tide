@@ -38,6 +38,7 @@ const burstParticles = [];
 const dissolveMotes = [];
 const ripples = [];
 const trails = [];
+const diveBubbles = [];
 
 let width = 0;
 let height = 0;
@@ -538,6 +539,7 @@ function traceWaterPath(bounds, time = 0) {
   for (let x = bounds.left; x <= bounds.right; x += 18) {
     ctx.lineTo(x, surfaceY(x, bounds, time));
   }
+  ctx.lineTo(bounds.right, surfaceY(bounds.right, bounds, time));
   ctx.lineTo(bounds.right, bounds.bottom + 4);
   ctx.closePath();
 }
@@ -549,6 +551,9 @@ function traceSurfaceLine(bounds, time = 0) {
     if (x === bounds.left) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
+  // Reach the exact right edge even when width isn't a multiple of the step,
+  // otherwise the surface line is cut short on the right.
+  ctx.lineTo(bounds.right, surfaceY(bounds.right, bounds, time));
 }
 
 function clipWater(bounds, time = 0) {
@@ -944,6 +949,60 @@ function drawDepthShade(bounds, time = 0) {
   ctx.restore();
 }
 
+function ensureDiveBubbles() {
+  if (diveBubbles.length) return;
+  for (let i = 0; i < 48; i += 1) {
+    diveBubbles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      r: 0.6 + Math.random() * 2.2,
+      speed: 70 + Math.random() * 170,
+      drift: (Math.random() - 0.5) * 18,
+      hue: [188, 200, 214, 170][Math.floor(Math.random() * 4)],
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+// Marine snow streaming upward past the camera — the strongest cue that the
+// viewpoint itself is sinking. Only active while diving.
+function updateAndDrawDiveBubbles(dt, time) {
+  if (diveProgress < 0.02) return;
+  ensureDiveBubbles();
+
+  const fade = clamp(diveProgress * 1.3, 0, 1);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "round";
+
+  for (const b of diveBubbles) {
+    b.y -= b.speed * dt * (0.6 + diveProgress * 1.4);
+    b.x += Math.sin(time * 0.8 + b.phase) * b.drift * dt;
+    if (b.y < -12) {
+      b.y = height + 12;
+      b.x = Math.random() * width;
+    }
+
+    const streak = b.speed * 0.06 * (0.6 + diveProgress);
+    const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(time * 1.5 + b.phase));
+    const alpha = fade * twinkle;
+
+    ctx.strokeStyle = `hsla(${b.hue}, 100%, 72%, ${alpha * 0.45})`;
+    ctx.lineWidth = b.r * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(b.x, b.y + streak);
+    ctx.stroke();
+
+    ctx.fillStyle = `hsla(${b.hue}, 100%, 76%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
 function updateDiveStage() {
   if (!appShell?.classList.contains("is-diving")) return;
 
@@ -1023,6 +1082,8 @@ function frame(now) {
     ctx.fillRect(0, lineY, width, height - lineY);
     ctx.restore();
   }
+
+  updateAndDrawDiveBubbles(dt, time);
 
   requestAnimationFrame(frame);
 }
