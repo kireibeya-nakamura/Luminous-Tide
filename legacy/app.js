@@ -648,14 +648,20 @@ function setPointer(event) {
   }
 }
 
-canvas.addEventListener("pointerenter", setPointer);
-canvas.addEventListener("pointermove", setPointer);
-canvas.addEventListener("pointerleave", () => {
+function isUiTarget(event) {
+  return Boolean(event.target?.closest?.(".panel, button, input, label, select, textarea, a"));
+}
+
+window.addEventListener("pointermove", (event) => {
+  if (isUiTarget(event)) return;
+  setPointer(event);
+});
+window.addEventListener("pointerleave", () => {
   pointer.active = false;
   pointer.down = false;
 });
-canvas.addEventListener("pointerdown", (event) => {
-  canvas.setPointerCapture(event.pointerId);
+window.addEventListener("pointerdown", (event) => {
+  if (isUiTarget(event)) return;
   setPointer(event);
   pointer.down = true;
   if (isInsideWater(pointer.x, pointer.y)) {
@@ -664,13 +670,12 @@ canvas.addEventListener("pointerdown", (event) => {
     visualEnergy = Math.min(2.6, visualEnergy + 0.65);
   }
 });
-canvas.addEventListener("pointerup", (event) => {
+window.addEventListener("pointerup", () => {
   pointer.down = false;
-  try {
-    canvas.releasePointerCapture(event.pointerId);
-  } catch {
-    // Pointer capture may already be released on some mobile browsers.
-  }
+});
+window.addEventListener("pointercancel", () => {
+  pointer.down = false;
+  pointer.active = false;
 });
 
 form.addEventListener("submit", (event) => {
