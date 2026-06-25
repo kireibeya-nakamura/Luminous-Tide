@@ -46,9 +46,13 @@ let lastTime = performance.now();
 let visualEnergy = 0;
 let flowX = 0;
 let flowY = 0;
+let diveRevealTimer = 0;
 let diveCleanupTimer = 0;
+let diveProgress = 0;
+let diveTarget = 0;
 
-const DIVE_TRAVEL_MS = 1900;
+const DIVE_REVEAL_MS = 1000;
+const DIVE_RETURN_MS = 900;
 
 const pointer = {
   x: 0,
@@ -184,7 +188,7 @@ function waterBounds() {
     rx: width * 0.48,
     ry: depth * 0.44,
     depth,
-    surfaceAmp: mobile ? 4.2 : 6.4,
+    surfaceAmp: (mobile ? 4.2 : 6.4) * (1 - diveProgress * 0.92),
   };
 }
 
@@ -651,21 +655,22 @@ function drawWaterBase(bounds, time, m) {
   drawMoonReflection(bounds, time, m);
   ctx.restore();
 
-  const rimAlpha = 0.18 + m.glow * 0.08;
-  ctx.shadowColor = "rgba(69, 219, 255, 0.8)";
-  ctx.shadowBlur = width < 760 ? 8 : 24 + m.glow * 8;
-  ctx.lineWidth = 1.3;
-  ctx.strokeStyle = `rgba(107, 232, 255, ${rimAlpha})`;
+  const diveBoost = 1 + diveProgress * 3.4;
+  const rimAlpha = clamp((0.18 + m.glow * 0.08) * diveBoost, 0, 1);
+  ctx.shadowColor = "rgba(120, 235, 255, 0.85)";
+  ctx.shadowBlur = (width < 760 ? 8 : 24 + m.glow * 8) * (1 + diveProgress * 1.8);
+  ctx.lineWidth = 1.3 + diveProgress * 2.4;
+  ctx.strokeStyle = `rgba(150, 240, 255, ${rimAlpha})`;
   traceSurfaceLine(bounds, time);
   ctx.stroke();
 
   const rim = ctx.createLinearGradient(0, bounds.horizon, width, bounds.horizon);
   rim.addColorStop(0, "rgba(80, 113, 180, 0)");
-  rim.addColorStop(0.44, `rgba(88, 240, 255, ${0.22 + m.glow * 0.05})`);
-  rim.addColorStop(0.55, `rgba(147, 113, 255, ${0.14 + m.glow * 0.04})`);
+  rim.addColorStop(0.44, `rgba(88, 240, 255, ${clamp((0.22 + m.glow * 0.05) * diveBoost, 0, 1)})`);
+  rim.addColorStop(0.55, `rgba(147, 113, 255, ${clamp((0.14 + m.glow * 0.04) * diveBoost, 0, 1)})`);
   rim.addColorStop(1, "rgba(80, 113, 180, 0)");
   ctx.strokeStyle = rim;
-  ctx.lineWidth = 3.2;
+  ctx.lineWidth = 3.2 + diveProgress * 5;
   traceSurfaceLine(bounds, time + 0.8);
   ctx.stroke();
   ctx.restore();
@@ -712,11 +717,21 @@ function updateParticles(dt, time, bounds, m) {
     p.x += p.vx * dt * 60;
     p.y += p.vy * dt * 60;
 
+    // While diving, draw every mote toward the glowing surface line so the
+    // plankton visibly gather into a single bright horizon.
+    if (diveProgress > 0.001) {
+      const lineY = surfaceY(p.x, bounds, time);
+      const pull = diveProgress * diveProgress;
+      p.y += (lineY - p.y) * Math.min(0.9, pull * 0.16 * dt * 60);
+      p.vx *= 1 - 0.6 * pull;
+      p.vy *= 1 - 0.6 * pull;
+    }
+
     if (p.x < 0) p.x = width;
     if (p.x > width) p.x = 0;
 
     const top = surfaceY(p.x, bounds, time) + 10;
-    if (p.y < top) {
+    if (diveProgress < 0.35 && p.y < top) {
       p.y = top + 8 + Math.random() * 22;
       p.vy = Math.abs(p.vy) * 0.42;
     }
@@ -935,11 +950,24 @@ function frame(now) {
   const time = now / 1000;
   lastTime = now;
 
+  diveProgress += (diveTarget - diveProgress) * Math.min(1, dt * 3.4);
+  if (diveTarget === 0 && diveProgress < 0.0008) diveProgress = 0;
+
   const m = metrics();
   const bounds = waterBounds();
   adjustParticleCount();
   updateParticles(dt, time, bounds, m);
   updateTransient(dt);
+
+  ctx.save();
+  if (diveProgress > 0.001) {
+    // Camera sinks toward the glowing line, zooms in, and pushes up through it.
+    const ease = diveProgress * diveProgress * (3 - 2 * diveProgress);
+    ctx.translate(width * 0.5, bounds.horizon);
+    ctx.scale(1 + ease * 0.42, 1 + ease * 0.42);
+    ctx.translate(-width * 0.5, -bounds.horizon);
+    ctx.translate(0, -ease * height * 0.5);
+  }
 
   drawBackground(time, m);
   drawWaterBase(bounds, time, m);
@@ -947,6 +975,22 @@ function frame(now) {
   drawParticles(bounds, time, m);
   drawDepthShade(bounds, time);
   drawDissolveMotes(time);
+  ctx.restore();
+
+  if (diveProgress > 0.001) {
+    const seal = clamp((diveProgress - 0.3) / 0.6, 0, 1);
+    if (seal > 0) {
+      const sealGrd = ctx.createLinearGradient(0, 0, 0, height);
+      sealGrd.addColorStop(0, "rgba(4, 17, 33, 1)");
+      sealGrd.addColorStop(0.5, "rgba(2, 9, 19, 1)");
+      sealGrd.addColorStop(1, "rgba(1, 4, 10, 1)");
+      ctx.save();
+      ctx.globalAlpha = seal * 0.92;
+      ctx.fillStyle = sealGrd;
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+  }
 
   requestAnimationFrame(frame);
 }
@@ -1045,9 +1089,8 @@ function closeRecordPanel() {
 
 function openDiveView() {
   if (
-    appShell?.classList.contains("is-dive-transitioning") ||
-    appShell?.classList.contains("is-dive-returning") ||
-    appShell?.classList.contains("is-diving")
+    appShell?.classList.contains("is-diving") ||
+    appShell?.classList.contains("is-dive-returning")
   ) {
     return;
   }
@@ -1058,43 +1101,48 @@ function openDiveView() {
   if (diveLogList) diveLogList.scrollTop = 0;
   updateDiveScrollDepth();
 
-  // The above-water world lifts away and the underwater layer rises from below
-  // in lockstep — one continuous descent through the surface, started together.
-  appShell?.classList.add("is-diving", "is-dive-transitioning");
-  diveView?.classList.add("is-open");
-  diveView?.setAttribute("aria-hidden", "false");
+  // Begin the canvas descent: plankton gather into the line, waves flatten to a
+  // single bright horizon, and the camera sinks through it. The Dive Log is
+  // revealed only afterwards, as one quiet fade.
+  appShell?.classList.add("is-diving");
+  diveTarget = 1;
+  flowY = Math.min(1.2, flowY + 0.3);
 
-  visualEnergy = Math.min(2.8, visualEnergy + 0.42);
-  flowY = Math.min(1.2, flowY + 0.34);
-
+  window.clearTimeout(diveRevealTimer);
   window.clearTimeout(diveCleanupTimer);
-  diveCleanupTimer = window.setTimeout(() => {
-    appShell?.classList.remove("is-dive-transitioning");
-    diveCleanupTimer = 0;
-  }, DIVE_TRAVEL_MS);
+  diveRevealTimer = window.setTimeout(() => {
+    diveView?.classList.add("is-open");
+    diveView?.setAttribute("aria-hidden", "false");
+    diveRevealTimer = 0;
+  }, DIVE_REVEAL_MS);
 }
 
 function closeDiveView() {
-  if (appShell?.classList.contains("is-dive-returning")) return;
-  if (!appShell?.classList.contains("is-diving")) return;
+  if (
+    !appShell?.classList.contains("is-diving") ||
+    appShell?.classList.contains("is-dive-returning")
+  ) {
+    return;
+  }
 
+  window.clearTimeout(diveRevealTimer);
   window.clearTimeout(diveCleanupTimer);
+  diveRevealTimer = 0;
 
-  // Resurface: the underwater layer sinks back below and the above-water world
-  // settles back into place.
-  appShell?.classList.remove("is-dive-transitioning");
-  appShell?.classList.add("is-dive-returning");
+  // Resurface: the log fades out, plankton disperse, and the camera rises back
+  // up to the night sea.
   diveView?.classList.remove("is-open");
+  appShell?.classList.add("is-dive-returning");
   openDiveButton?.setAttribute("aria-expanded", "false");
-  updateDiveScrollDepth();
+  diveTarget = 0;
 
   diveCleanupTimer = window.setTimeout(() => {
-    appShell?.classList.remove("is-dive-returning", "is-diving");
+    appShell?.classList.remove("is-diving", "is-dive-returning");
     diveView?.setAttribute("aria-hidden", "true");
     if (diveLogList) diveLogList.scrollTop = 0;
     updateDiveScrollDepth();
     diveCleanupTimer = 0;
-  }, DIVE_TRAVEL_MS);
+  }, DIVE_RETURN_MS);
 }
 
 function effortSourcePoint() {

@@ -205,48 +205,23 @@ button {
   transform: translate(-50%, 12px) scale(0.96);
 }
 
-/* The above-water world rises up and past the camera as we sink below it:
-   a gentle forward push (scale) while it lifts fully out of view. */
-.app-shell.is-dive-transitioning #tideCanvas {
-  opacity: 0.32;
-  filter: brightness(0.36) saturate(0.82) blur(0.8px);
-  transform: translateY(-104svh) scale(1.2);
-}
-
-.app-shell.is-dive-returning #tideCanvas {
-  animation: dive-canvas-return 1800ms cubic-bezier(0.45, 0.05, 0.3, 1) both;
-}
-
-.app-shell.is-dive-transitioning .gesture-layer,
-.app-shell.is-dive-returning .gesture-layer,
-.app-shell.is-diving .gesture-layer {
+/* The canvas itself renders the descent — plankton gathering into the glowing
+   line and the camera sinking through it — so it stays in place (no CSS
+   transform). The above-water chrome simply dims away as we leave the surface. */
+.app-shell.is-diving .gesture-layer,
+.app-shell.is-dive-returning .gesture-layer {
   pointer-events: none;
 }
 
-.app-shell.is-dive-transitioning .intro-panel {
-  opacity: 0;
-  transform: translateY(-46svh);
-  transition:
-    opacity 1100ms ease,
-    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1);
-}
-
-.app-shell.is-dive-transitioning .record-fab {
+.app-shell.is-diving .intro-panel,
+.app-shell.is-diving .record-fab,
+.app-shell.is-diving .dive-fab,
+.app-shell.is-dive-returning .intro-panel,
+.app-shell.is-dive-returning .record-fab,
+.app-shell.is-dive-returning .dive-fab {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -46svh) scale(0.94);
-  transition:
-    opacity 1100ms ease,
-    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1);
-}
-
-.app-shell.is-dive-transitioning .dive-fab {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-46svh) scale(0.92);
-  transition:
-    opacity 1100ms ease,
-    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1);
+  transition: opacity 650ms ease;
 }
 
 .dive-fab {
@@ -295,54 +270,10 @@ button {
     inset 0 1px 0 rgba(255, 255, 255, 0.055);
 }
 
-/* A single bright line at screen-centre that blooms only at the instant the
-   two layers meet — the moment of crossing the surface. */
+/* The old DOM crossing overlay is gone — the crossing is now drawn on the
+   canvas itself. The element is kept empty/inert for backwards compatibility. */
 .dive-transition {
-  position: fixed;
-  z-index: 6;
-  inset: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.dive-transition::before {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    rgba(92, 183, 231, 0),
-    rgba(150, 232, 255, 0.95) 44%,
-    rgba(190, 162, 255, 0.5) 62%,
-    rgba(92, 183, 231, 0)
-  );
-  box-shadow:
-    0 0 30px rgba(120, 220, 255, 0.75),
-    0 0 64px rgba(96, 196, 255, 0.4);
-  content: "";
-  transform: translateY(-50%);
-}
-
-.dive-transition::after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: min(78vw, 520px);
-  height: 220px;
-  background: radial-gradient(ellipse at 50% 50%, rgba(150, 226, 255, 0.28), transparent 64%);
-  content: "";
-  transform: translate(-50%, -50%);
-}
-
-.app-shell.is-dive-transitioning .dive-transition {
-  animation: dive-cross-flash 1800ms cubic-bezier(0.45, 0.05, 0.3, 1) both;
-}
-
-.app-shell.is-dive-returning .dive-transition {
-  animation: dive-cross-flash 1800ms cubic-bezier(0.45, 0.05, 0.3, 1) reverse both;
+  display: none;
 }
 
 .dive-fab.is-hidden {
@@ -350,10 +281,9 @@ button {
   pointer-events: none;
 }
 
-/* The underwater layer is a real space stacked below the viewport. It rises
-   up from beneath in lockstep with the above-water world lifting away, so the
-   camera travels continuously down through the surface into it — no cross-fade,
-   no popup. */
+/* The Dive Log is revealed only after the canvas has carried us through the
+   surface, and it comes in as ONE quiet fade — no sliding, no per-element
+   pop-in, no backdrop blur to stutter. It simply becomes the world we are in. */
 .dive-view {
   --dive-scroll: 0;
   --dive-dark-opacity: 0;
@@ -366,47 +296,16 @@ button {
   overflow: hidden;
   background:
     radial-gradient(ellipse at 50% 0%, rgba(111, 194, 255, 0.16), transparent 30%),
-    linear-gradient(180deg, rgba(6, 25, 43, 0.96) 0%, rgba(2, 9, 19, 0.98) 48%, #01040a 100%);
+    linear-gradient(180deg, rgba(6, 25, 43, 0.98) 0%, rgba(2, 9, 19, 0.99) 48%, #01040a 100%);
   color: var(--text);
-  opacity: 1;
+  opacity: 0;
   pointer-events: none;
-  transform: translateY(104svh) scale(1.06);
-  transition:
-    transform 1800ms cubic-bezier(0.45, 0.05, 0.3, 1),
-    opacity 500ms ease;
+  transition: opacity 900ms ease;
 }
 
 .dive-view.is-open {
+  opacity: 1;
   pointer-events: auto;
-  transform: translateY(0) scale(1);
-}
-
-/* Dive Log content stays hidden during the descent, then rises in
-   quietly only after the surface has been crossed. */
-.dive-header,
-.dive-log-wrap {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 800ms ease,
-    transform 1000ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.dive-view.is-open .dive-header {
-  opacity: 1;
-  transform: translateY(0);
-  transition-delay: 1150ms;
-}
-
-.dive-view.is-open .dive-log-wrap {
-  opacity: 1;
-  transform: translateY(0);
-  transition-delay: 1320ms;
-}
-
-.app-shell.is-dive-returning .dive-header,
-.app-shell.is-dive-returning .dive-log-wrap {
-  transition-delay: 0ms;
 }
 
 .dive-view::before {
@@ -530,11 +429,10 @@ button {
   border: 1px solid rgba(184, 231, 255, 0.14);
   border-radius: 999px;
   padding: 0 14px;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(12, 28, 44, 0.55);
   color: rgba(218, 236, 248, 0.68);
   font-size: 0.82rem;
   letter-spacing: 0.08em;
-  backdrop-filter: blur(16px);
 }
 
 .dive-log-wrap {
@@ -592,12 +490,11 @@ button {
   border-radius: 16px;
   padding: 11px 13px;
   background:
-    radial-gradient(circle at 32% 0%, rgba(91, 226, 255, 0.08), transparent 58%),
-    rgba(6, 18, 31, 0.36);
+    radial-gradient(circle at 32% 0%, rgba(91, 226, 255, 0.1), transparent 58%),
+    rgba(6, 18, 31, 0.66);
   box-shadow:
     0 14px 34px rgba(0, 0, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.035);
-  backdrop-filter: blur(16px);
 }
 
 .dive-log-item.is-left {
@@ -705,41 +602,6 @@ button {
   68% {
     transform: translateY(1.5px) scaleX(0.992);
     filter: brightness(0.92);
-  }
-}
-
-/* The single bright line stays dark until the two layers meet at centre,
-   flares once as we cross the surface, then fades as we sink below it. */
-@keyframes dive-cross-flash {
-  0%,
-  34% {
-    opacity: 0;
-  }
-
-  50% {
-    opacity: 1;
-  }
-
-  64% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes dive-canvas-return {
-  0% {
-    opacity: 0.32;
-    filter: brightness(0.36) saturate(0.82) blur(0.8px);
-    transform: translateY(-104svh) scale(1.2);
-  }
-
-  100% {
-    opacity: 1;
-    filter: brightness(1) saturate(1) blur(0);
-    transform: translateY(0) scale(1);
   }
 }
 
@@ -1207,10 +1069,6 @@ form {
 
   .record-fab.is-hidden {
     transform: translateY(12px) scale(0.96);
-  }
-
-  .app-shell.is-dive-transitioning .record-fab {
-    transform: translateY(-46svh) scale(0.94);
   }
 
   .dive-fab {
