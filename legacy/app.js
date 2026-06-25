@@ -1,10 +1,13 @@
 const canvas = document.querySelector("#tideCanvas");
 const ctx = canvas.getContext("2d");
 const gestureLayer = document.querySelector("#gestureLayer");
+const appShell = document.querySelector(".app-shell");
 
 const form = document.querySelector("#effortForm");
 const minutesInput = document.querySelector("#minutesInput");
 const logList = document.querySelector("#logList");
+const diveLogList = document.querySelector("#diveLogList");
+const diveEmpty = document.querySelector("#diveEmpty");
 const todayTimeEl = document.querySelector("#todayTime");
 const totalTimeEl = document.querySelector("#totalTime");
 const streakDaysEl = document.querySelector("#streakDays");
@@ -14,6 +17,9 @@ const recordPanel = document.querySelector("#recordPanel");
 const recordScrim = document.querySelector("#recordScrim");
 const openRecordButton = document.querySelector("#openRecordButton");
 const closeRecordButton = document.querySelector("#closeRecordButton");
+const diveView = document.querySelector("#diveView");
+const openDiveButton = document.querySelector("#openDiveButton");
+const closeDiveButton = document.querySelector("#closeDiveButton");
 
 const STORAGE_KEY = "luminous-tide-prototype-v1";
 const MAX_PARTICLES_DESKTOP = 1450;
@@ -88,6 +94,18 @@ function minutesToLabel(minutes) {
   if (hours && mins) return `${hours}h ${mins}m`;
   if (hours) return `${hours}h`;
   return `${mins}m`;
+}
+
+function recordDateLabel(record) {
+  const date = new Date(record.createdAt || `${record.date}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return record.date || "";
+
+  const today = localDateKey();
+  const dayLabel =
+    record.date === today ? "今日" : `${date.getMonth() + 1}/${date.getDate()}`;
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${dayLabel} ${hours}:${minutes}`;
 }
 
 function clamp(value, min, max) {
@@ -304,11 +322,53 @@ function addEffort(minutes, category, sourcePoint = null) {
   }
 }
 
+function renderDiveLog() {
+  if (!diveLogList) return;
+
+  const records = data.records
+    .slice()
+    .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+
+  diveLogList.innerHTML = "";
+  diveEmpty?.classList.toggle("is-hidden", records.length > 0);
+
+  const maxIndex = Math.max(records.length - 1, 1);
+  for (const [index, record] of records.entries()) {
+    const category = categories[record.category] ?? categories.portfolio;
+    const depth = index / maxIndex;
+    const item = document.createElement("li");
+    item.className = `dive-log-item ${index % 2 === 0 ? "is-right" : "is-left"}`;
+    item.style.color = category.color;
+    item.style.opacity = String(clamp(0.96 - depth * 0.34, 0.52, 0.96));
+    item.style.setProperty("--dive-scale", String(clamp(1 - depth * 0.08, 0.9, 1)));
+
+    const row = document.createElement("div");
+    row.className = "dive-log-title-row";
+
+    const title = document.createElement("span");
+    title.className = "dive-log-title";
+    title.textContent = category.label;
+
+    const duration = document.createElement("span");
+    duration.className = "dive-log-duration";
+    duration.textContent = minutesToLabel(record.minutes);
+
+    const date = document.createElement("span");
+    date.className = "dive-log-date";
+    date.textContent = recordDateLabel(record);
+
+    row.append(title, duration);
+    item.append(row, date);
+    diveLogList.append(item);
+  }
+}
+
 function updateUi() {
   const m = metrics();
   todayTimeEl.textContent = minutesToLabel(m.todayMinutes);
   totalTimeEl.textContent = minutesToLabel(m.totalMinutes);
   streakDaysEl.textContent = String(m.streakDays);
+  renderDiveLog();
 
   const today = localDateKey();
   const todayRecords = data.records
@@ -958,6 +1018,7 @@ function openRecordPanel() {
   recordScrim?.classList.add("is-open");
   recordPanel?.classList.add("is-open");
   openRecordButton?.classList.add("is-hidden");
+  openDiveButton?.classList.add("is-hidden");
   openRecordButton?.setAttribute("aria-expanded", "true");
 }
 
@@ -965,7 +1026,27 @@ function closeRecordPanel() {
   recordScrim?.classList.remove("is-open");
   recordPanel?.classList.remove("is-open", "is-absorbing");
   openRecordButton?.classList.remove("is-hidden");
+  openDiveButton?.classList.remove("is-hidden");
   openRecordButton?.setAttribute("aria-expanded", "false");
+}
+
+function openDiveView() {
+  closeRecordPanel();
+  renderDiveLog();
+  appShell?.classList.add("is-diving");
+  diveView?.classList.add("is-open");
+  diveView?.setAttribute("aria-hidden", "false");
+  openDiveButton?.setAttribute("aria-expanded", "true");
+  if (diveLogList) diveLogList.scrollTop = 0;
+  visualEnergy = Math.min(2.8, visualEnergy + 0.42);
+  flowY = Math.min(1.2, flowY + 0.34);
+}
+
+function closeDiveView() {
+  appShell?.classList.remove("is-diving");
+  diveView?.classList.remove("is-open");
+  diveView?.setAttribute("aria-hidden", "true");
+  openDiveButton?.setAttribute("aria-expanded", "false");
 }
 
 function effortSourcePoint() {
@@ -982,6 +1063,15 @@ function effortSourcePoint() {
 openRecordButton?.addEventListener("click", openRecordPanel);
 closeRecordButton?.addEventListener("click", closeRecordPanel);
 recordScrim?.addEventListener("click", closeRecordPanel);
+openDiveButton?.addEventListener("click", openDiveView);
+closeDiveButton?.addEventListener("click", closeDiveView);
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeRecordPanel();
+    closeDiveView();
+  }
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Luminous Tide Prototype</title>
-    <link rel="stylesheet" href="styles.css?v=modal-ui-11" />
+    <link rel="stylesheet" href="styles.css?v=dive-log-12" />
   </head>
   <body>
     <main class="app-shell">
@@ -19,6 +19,15 @@
         aria-expanded="false"
       >
         記録を足す
+      </button>
+      <button
+        class="dive-fab"
+        id="openDiveButton"
+        type="button"
+        aria-controls="diveView"
+        aria-expanded="false"
+      >
+        潜る
       </button>
 
       <section class="panel intro-panel" aria-label="現在の努力の状態">
@@ -103,8 +112,25 @@
         </div>
       </section>
 
+      <section class="dive-view" id="diveView" aria-label="記録の深度を見る" aria-hidden="true">
+        <div class="dive-surface" aria-hidden="true"></div>
+        <div class="dive-light" aria-hidden="true"></div>
+        <header class="dive-header">
+          <button class="dive-close" id="closeDiveButton" type="button">水面へ</button>
+          <div>
+            <p class="eyebrow">Dive log</p>
+            <h2>潜る</h2>
+          </div>
+        </header>
+
+        <div class="dive-log-wrap">
+          <ol id="diveLogList" class="dive-log-list"></ol>
+          <p id="diveEmpty" class="dive-empty">まだ沈める記録がありません。</p>
+        </div>
+      </section>
+
     </main>
 
-    <script src="app.js?v=modal-ui-11"></script>
+    <script src="app.js?v=dive-log-12"></script>
   </body>
 </html>
