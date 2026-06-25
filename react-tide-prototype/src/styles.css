@@ -46,7 +46,8 @@ button {
 
 .phone-stage {
   position: relative;
-  width: min(100vw, 430px);
+  width: 100vw;
+  max-width: 430px;
   height: 100svh;
   min-height: 640px;
   overflow: hidden;
@@ -187,6 +188,7 @@ button {
   color: rgba(220, 244, 255, 0.72);
   font-size: 0.78rem;
   letter-spacing: 0.04em;
+  white-space: nowrap;
   backdrop-filter: blur(16px);
 }
 
@@ -385,6 +387,31 @@ h1 {
 
   .record-dock {
     grid-template-columns: 1fr;
+  }
+
+  .record-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .phone-stage {
+    max-width: none;
+  }
+
+  .top-bar {
+    right: 14px;
+    left: 14px;
+  }
+
+  .level-chip {
+    padding: 8px 11px;
+    font-size: 0.74rem;
+  }
+
+  .record-dock {
+    grid-template-columns: 1fr;
+    gap: 11px;
   }
 
   .record-button {
