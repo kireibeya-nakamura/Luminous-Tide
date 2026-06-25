@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -37,6 +37,18 @@ jobs:
       - name: Build React prototype
         working-directory: react-tide-prototype
         run: npm run build
+
+      - name: Publish dist to gh-pages branch
+        run: |
+          cd react-tide-prototype/dist
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Deploy React prototype"
+          git branch -M gh-pages
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push -f origin gh-pages
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
