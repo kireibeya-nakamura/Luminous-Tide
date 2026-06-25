@@ -4,12 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Luminous Tide Prototype</title>
-    <link rel="stylesheet" href="styles.css?v=mobile-gesture-3" />
+    <link rel="stylesheet" href="styles.css?v=record-dissolve-4" />
   </head>
   <body>
     <main class="app-shell">
       <div id="gestureLayer" class="gesture-layer" aria-hidden="true"></div>
       <canvas id="tideCanvas" aria-label="努力の蓄積で育つ発光する水面"></canvas>
+      <button
+        class="record-fab"
+        id="openRecordButton"
+        type="button"
+        aria-controls="recordPanel"
+        aria-expanded="false"
+      >
+        記録を足す
+      </button>
 
       <section class="panel intro-panel" aria-label="現在の努力の状態">
         <p class="eyebrow">Luminous Tide</p>
@@ -33,13 +42,16 @@
         </div>
       </section>
 
-      <section class="panel record-panel" aria-label="努力を記録する">
+      <section class="panel record-panel" id="recordPanel" aria-label="努力を記録する">
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Today's record</p>
             <h2>努力を足す</h2>
           </div>
-          <button class="ghost-button" id="tiltButton" type="button">傾きON</button>
+          <div class="panel-actions">
+            <button class="ghost-button" id="tiltButton" type="button">傾きON</button>
+            <button class="text-button" id="closeRecordButton" type="button">閉じる</button>
+          </div>
         </div>
 
         <form id="effortForm">
@@ -97,6 +109,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=mobile-gesture-3"></script>
+    <script src="app.js?v=record-dissolve-4"></script>
   </body>
 </html>

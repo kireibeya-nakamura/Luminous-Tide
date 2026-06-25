@@ -10,6 +10,9 @@ const totalTimeEl = document.querySelector("#totalTime");
 const streakDaysEl = document.querySelector("#streakDays");
 const resetButton = document.querySelector("#resetButton");
 const tiltButton = document.querySelector("#tiltButton");
+const recordPanel = document.querySelector("#recordPanel");
+const openRecordButton = document.querySelector("#openRecordButton");
+const closeRecordButton = document.querySelector("#closeRecordButton");
 
 const STORAGE_KEY = "luminous-tide-prototype-v1";
 const MAX_PARTICLES_DESKTOP = 1450;
@@ -25,6 +28,7 @@ const categories = {
 const data = loadData();
 const particles = [];
 const burstParticles = [];
+const dissolveMotes = [];
 const ripples = [];
 const trails = [];
 
@@ -215,12 +219,42 @@ function addRipple(x, y, strength = 1) {
   });
 }
 
+function emitEffortDissolve(source, target, minutes, category) {
+  const hue = categories[category]?.hue ?? 188;
+  const amount = Math.min(96, 18 + Math.floor(minutes / 4));
+
+  for (let i = 0; i < amount; i += 1) {
+    const targetJitter = Math.min(80, 18 + minutes * 0.16);
+    dissolveMotes.push({
+      sx: source.x + (Math.random() - 0.5) * 28,
+      sy: source.y + (Math.random() - 0.5) * 16,
+      tx: target.x + (Math.random() - 0.5) * targetJitter,
+      ty: target.y + (Math.random() - 0.5) * targetJitter * 0.46,
+      x: source.x,
+      y: source.y,
+      delay: Math.random() * 0.28,
+      age: 0,
+      duration: 0.88 + Math.random() * 0.54,
+      curve: (Math.random() - 0.5) * 140,
+      lift: 18 + Math.random() * 54,
+      size: 1.1 + Math.random() * 2.8,
+      hue: hue + (Math.random() - 0.5) * 32,
+    });
+  }
+}
+
+function triggerEffortImpact(point, minutes, category) {
+  visualEnergy = Math.min(3.4, visualEnergy + minutes / 70);
+  addRipple(point.x, point.y, clamp(minutes / 60, 0.7, 4.2));
+  spawnBurst(point.x, point.y, Math.min(170, 42 + minutes), category);
+}
+
 function categoryFromForm() {
   const checked = form.querySelector("input[name='category']:checked");
   return checked?.value ?? "portfolio";
 }
 
-function addEffort(minutes, category) {
+function addEffort(minutes, category, sourcePoint = null) {
   const safeMinutes = clamp(Math.round(Number(minutes) || 0), 5, 720);
   const now = new Date();
   data.records.push({
@@ -238,9 +272,13 @@ function addEffort(minutes, category) {
     x: bounds.cx + (Math.random() - 0.5) * bounds.rx * 0.35,
     y: bounds.cy + (Math.random() - 0.5) * bounds.ry * 0.3,
   };
-  visualEnergy = Math.min(3.4, visualEnergy + safeMinutes / 70);
-  addRipple(point.x, point.y, clamp(safeMinutes / 60, 0.7, 4.2));
-  spawnBurst(point.x, point.y, Math.min(170, 42 + safeMinutes), category);
+
+  if (sourcePoint) {
+    emitEffortDissolve(sourcePoint, point, safeMinutes, category);
+    window.setTimeout(() => triggerEffortImpact(point, safeMinutes, category), 680);
+  } else {
+    triggerEffortImpact(point, safeMinutes, category);
+  }
 }
 
 function updateUi() {
@@ -473,6 +511,21 @@ function updateTransient(dt) {
     if (trails[i].life <= 0) trails.splice(i, 1);
   }
 
+  for (let i = dissolveMotes.length - 1; i >= 0; i -= 1) {
+    const mote = dissolveMotes[i];
+    mote.age += dt;
+    const rawT = (mote.age - mote.delay) / mote.duration;
+    if (rawT < 0) continue;
+
+    const t = clamp(rawT, 0, 1);
+    const eased = 1 - (1 - t) ** 3;
+    const arc = Math.sin(t * Math.PI);
+    mote.x = mote.sx + (mote.tx - mote.sx) * eased + arc * mote.curve;
+    mote.y = mote.sy + (mote.ty - mote.sy) * eased - arc * mote.lift;
+
+    if (rawT >= 1) dissolveMotes.splice(i, 1);
+  }
+
   for (let i = burstParticles.length - 1; i >= 0; i -= 1) {
     const p = burstParticles[i];
     p.life -= dt;
@@ -509,6 +562,41 @@ function drawParticles(bounds, time, m) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawDissolveMotes(time) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+
+  for (const mote of dissolveMotes) {
+    const t = clamp((mote.age - mote.delay) / mote.duration, 0, 1);
+    if (t <= 0) continue;
+
+    const alpha = Math.sin(t * Math.PI) * 0.82;
+    const pulse = 0.82 + Math.sin(time * 8 + mote.hue) * 0.18;
+    const radius = mote.size * (0.7 + t * 0.8) * pulse;
+
+    ctx.shadowColor = `hsla(${mote.hue}, 100%, 70%, ${alpha})`;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = `hsla(${mote.hue}, 100%, 72%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(mote.x, mote.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (t > 0.18 && t < 0.9) {
+      ctx.strokeStyle = `hsla(${mote.hue}, 100%, 70%, ${alpha * 0.26})`;
+      ctx.lineWidth = Math.max(0.7, radius * 0.48);
+      ctx.beginPath();
+      ctx.moveTo(mote.x, mote.y);
+      ctx.lineTo(
+        mote.x - (mote.tx - mote.sx) * 0.025,
+        mote.y - (mote.ty - mote.sy) * 0.025,
+      );
+      ctx.stroke();
+    }
   }
 
   ctx.restore();
@@ -621,6 +709,7 @@ function frame(now) {
   drawRipples(bounds);
   drawParticles(bounds, time, m);
   drawDepthShade(bounds);
+  drawDissolveMotes(time);
 
   requestAnimationFrame(frame);
 }
@@ -700,9 +789,39 @@ pointerTarget.addEventListener("pointercancel", (event) => {
   releaseGesturePointer(event.pointerId);
 });
 
+function openRecordPanel() {
+  recordPanel?.classList.remove("is-absorbing");
+  recordPanel?.classList.add("is-open");
+  openRecordButton?.classList.add("is-hidden");
+  openRecordButton?.setAttribute("aria-expanded", "true");
+}
+
+function closeRecordPanel() {
+  recordPanel?.classList.remove("is-open", "is-absorbing");
+  openRecordButton?.classList.remove("is-hidden");
+  openRecordButton?.setAttribute("aria-expanded", "false");
+}
+
+function effortSourcePoint() {
+  const submitButton = form.querySelector(".primary-button");
+  const rect = submitButton?.getBoundingClientRect?.();
+  if (!rect) return null;
+
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+}
+
+openRecordButton?.addEventListener("click", openRecordPanel);
+closeRecordButton?.addEventListener("click", closeRecordPanel);
+
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  addEffort(minutesInput.value, categoryFromForm());
+  const source = effortSourcePoint();
+  addEffort(minutesInput.value, categoryFromForm(), source);
+  recordPanel?.classList.add("is-absorbing");
+  window.setTimeout(closeRecordPanel, 780);
 });
 
 document.querySelectorAll("[data-minutes]").forEach((button) => {
