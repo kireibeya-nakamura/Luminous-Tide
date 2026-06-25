@@ -16,7 +16,7 @@ const closeRecordButton = document.querySelector("#closeRecordButton");
 
 const STORAGE_KEY = "luminous-tide-prototype-v1";
 const MAX_PARTICLES_DESKTOP = 1450;
-const MAX_PARTICLES_MOBILE = 780;
+const MAX_PARTICLES_MOBILE = 520;
 
 const categories = {
   portfolio: { label: "制作", color: "#48e5ff", hue: 188 },
@@ -155,8 +155,8 @@ function waterBounds() {
   return {
     horizon,
     bottom: height,
-    left: -width * 0.18,
-    right: width * 1.18,
+    left: 0,
+    right: width,
     cx: width * 0.5,
     cy: horizon + depth * 0.54,
     rx: width * 0.48,
@@ -175,7 +175,7 @@ function surfaceY(x, bounds = waterBounds(), time = 0) {
 }
 
 function isInsideWater(x, y, bounds = waterBounds()) {
-  return x >= -40 && x <= width + 40 && y >= surfaceY(x, bounds) - 12 && y <= bounds.bottom + 40;
+  return x >= 0 && x <= width && y >= surfaceY(x, bounds) - 12 && y <= bounds.bottom;
 }
 
 function randomPointInWater(bounds = waterBounds()) {
@@ -379,13 +379,13 @@ function drawBackground(time, m) {
   ctx.globalAlpha = 0.34;
   ctx.fillStyle = "rgba(0, 4, 10, 0.78)";
   ctx.beginPath();
-  ctx.moveTo(-20, bounds.horizon + 4);
-  for (let x = -20; x <= width * 0.4; x += 28) {
+  ctx.moveTo(0, bounds.horizon + 4);
+  for (let x = 0; x <= width * 0.4; x += 28) {
     const hill = Math.sin(x * 0.018 + 1.8) * 6 + Math.sin(x * 0.045) * 2;
     ctx.lineTo(x, bounds.horizon - 7 + hill);
   }
   ctx.lineTo(width * 0.42, bounds.horizon + 8);
-  ctx.lineTo(-20, bounds.horizon + 8);
+  ctx.lineTo(0, bounds.horizon + 8);
   ctx.closePath();
   ctx.fill();
   ctx.restore();
@@ -397,9 +397,9 @@ function drawBackground(time, m) {
   for (let i = 0; i < 5; i += 1) {
     const y = height * (0.18 + i * 0.1);
     ctx.beginPath();
-    for (let x = -30; x <= width + 30; x += 22) {
+    for (let x = 0; x <= width; x += 24) {
       const wave = Math.sin(x * 0.01 + time * 0.12 + i) * (4 + i * 1.2);
-      if (x === -30) ctx.moveTo(x, y + wave);
+      if (x === 0) ctx.moveTo(x, y + wave);
       else ctx.lineTo(x, y + wave);
     }
     ctx.stroke();
@@ -447,13 +447,15 @@ function drawWaterBase(bounds, time, m) {
   ctx.save();
   clipWater(bounds, time);
   ctx.globalCompositeOperation = "screen";
-  for (let i = 0; i < 28; i += 1) {
-    const t = i / 27;
+  const lineCount = width < 760 ? 18 : 28;
+  const xStep = width < 760 ? 16 : 11;
+  for (let i = 0; i < lineCount; i += 1) {
+    const t = i / (lineCount - 1);
     const y = bounds.horizon + 10 + bounds.depth * (t ** 1.58) * 0.9;
     const amp = 1.2 + t * 9.5 + m.glow * 0.75;
     const alpha = 0.035 + t * 0.05 + m.glow * 0.006;
     ctx.beginPath();
-    for (let x = bounds.left; x <= bounds.right; x += 11) {
+    for (let x = bounds.left; x <= bounds.right; x += xStep) {
       const wave =
         Math.sin(x * (0.014 + t * 0.018) + time * (0.22 + t * 0.22) + i * 0.68) * amp +
         Math.sin(x * (0.038 + t * 0.032) - time * 0.16 + i) * amp * 0.22;
@@ -539,8 +541,8 @@ function updateParticles(dt, time, bounds, m) {
     p.x += p.vx * dt * 60;
     p.y += p.vy * dt * 60;
 
-    if (p.x < -28) p.x = width + 28;
-    if (p.x > width + 28) p.x = -28;
+    if (p.x < 0) p.x = width;
+    if (p.x > width) p.x = 0;
 
     const top = surfaceY(p.x, bounds, time) + 10;
     if (p.y < top) {
