@@ -422,16 +422,17 @@ form {
 
   .record-panel {
     order: 3;
-    margin-top: clamp(180px, 34svh, 320px);
+    margin-top: clamp(560px, 78svh, 820px);
   }
 
   .hint-bar {
     position: relative;
-    order: 2;
+    order: 4;
     left: auto;
     bottom: auto;
     width: 100%;
     max-width: 520px;
+    margin-top: 4px;
     margin-right: auto;
     margin-left: auto;
     transform: none;
@@ -463,7 +464,7 @@ form {
   }
 
   .record-panel {
-    margin-top: clamp(210px, 38svh, 360px);
+    margin-top: clamp(620px, 84svh, 900px);
     background: rgba(5, 12, 22, 0.86);
   }
 
@@ -475,7 +476,9 @@ form {
   }
 
   .lead {
-    display: none;
+    margin-bottom: 12px;
+    font-size: 0.88rem;
+    line-height: 1.65;
   }
 
   .stats-grid {
