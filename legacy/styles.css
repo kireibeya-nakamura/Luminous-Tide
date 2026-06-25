@@ -308,16 +308,12 @@ button {
   top: 37svh;
   left: -14%;
   width: 128%;
-  height: 102px;
-  border-top: 1px solid rgba(154, 231, 255, 0.2);
-  border-bottom: 1px solid rgba(139, 226, 255, 0.08);
+  height: 96px;
+  border-top: 0;
+  border-bottom: 0;
   background:
-    radial-gradient(ellipse at 58% 36%, rgba(164, 225, 255, 0.26), transparent 42%),
-    repeating-linear-gradient(
-      -3deg,
-      rgba(123, 212, 255, 0.18) 0 1px,
-      transparent 1px 15px
-    );
+    radial-gradient(ellipse at 52% 50%, rgba(164, 225, 255, 0.18), transparent 48%),
+    linear-gradient(180deg, rgba(67, 163, 221, 0), rgba(67, 163, 221, 0.14) 48%, rgba(4, 14, 25, 0));
   box-shadow:
     0 -12px 28px rgba(107, 210, 255, 0.08),
     0 14px 44px rgba(0, 0, 0, 0.22);
@@ -326,28 +322,34 @@ button {
 
 .dive-transition-surface::before {
   position: absolute;
-  top: 0;
+  top: 46px;
   left: 0;
   width: 100%;
-  height: 1px;
+  height: 2px;
   background: linear-gradient(
     90deg,
     rgba(92, 183, 231, 0.02),
-    rgba(122, 226, 255, 0.5) 44%,
-    rgba(180, 152, 255, 0.2) 62%,
+    rgba(122, 226, 255, 0.58) 44%,
+    rgba(180, 152, 255, 0.18) 62%,
     rgba(92, 183, 231, 0.02)
   );
-  box-shadow: 0 0 18px rgba(88, 220, 255, 0.2);
+  border-radius: 999px;
+  box-shadow:
+    0 0 18px rgba(88, 220, 255, 0.24),
+    0 8px 22px rgba(22, 122, 190, 0.14);
   content: "";
+  animation: surface-horizon-breathe 6s ease-in-out infinite;
 }
 
 .dive-transition-surface::after {
   position: absolute;
-  top: 1px;
+  top: 48px;
   left: 0;
   width: 100%;
-  height: 86px;
-  background: linear-gradient(180deg, rgba(67, 163, 221, 0.18), rgba(4, 14, 25, 0));
+  height: 56px;
+  background:
+    radial-gradient(ellipse at 48% 0%, rgba(115, 214, 255, 0.12), transparent 54%),
+    linear-gradient(180deg, rgba(67, 163, 221, 0.16), rgba(4, 14, 25, 0));
   content: "";
 }
 
@@ -472,23 +474,51 @@ button {
 
 .dive-surface {
   position: absolute;
-  top: calc(-18px + var(--dive-surface-offset));
-  left: -8%;
-  width: 116%;
-  height: 158px;
+  top: calc(0px + var(--dive-surface-offset));
+  left: -12%;
+  width: 124%;
+  height: 116px;
   background:
-    radial-gradient(ellipse at 50% 8%, rgba(210, 238, 255, 0.22), transparent 28%),
-    repeating-linear-gradient(
-      -6deg,
-      rgba(158, 220, 255, 0.11) 0 1px,
-      transparent 1px 14px
-    ),
-    linear-gradient(180deg, rgba(85, 162, 218, 0.22), rgba(2, 12, 22, 0));
-  border-bottom: 1px solid rgba(169, 228, 255, 0.12);
+    radial-gradient(ellipse at 50% 42%, rgba(185, 232, 255, 0.16), transparent 44%),
+    linear-gradient(180deg, rgba(91, 173, 225, 0.12), rgba(3, 13, 24, 0) 72%);
+  border-bottom: 0;
   filter: blur(0.2px);
   opacity: var(--dive-surface-opacity);
   transform-origin: 50% 0;
   animation: dive-surface 7s ease-in-out infinite;
+}
+
+.dive-surface::before {
+  position: absolute;
+  top: 42px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(72, 146, 206, 0.02),
+    rgba(122, 226, 255, 0.54) 43%,
+    rgba(170, 145, 255, 0.16) 63%,
+    rgba(72, 146, 206, 0.02)
+  );
+  border-radius: 999px;
+  box-shadow:
+    0 0 18px rgba(88, 220, 255, 0.2),
+    0 7px 24px rgba(36, 130, 204, 0.14);
+  content: "";
+  animation: surface-horizon-breathe 6.2s ease-in-out infinite;
+}
+
+.dive-surface::after {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  width: 100%;
+  height: 58px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(115, 214, 255, 0.11), transparent 56%),
+    linear-gradient(180deg, rgba(67, 163, 221, 0.14), rgba(4, 14, 25, 0));
+  content: "";
 }
 
 .dive-light {
@@ -685,11 +715,29 @@ button {
 @keyframes dive-surface {
   0%,
   100% {
-    transform: translateY(0) skewY(-0.6deg);
+    transform: translateY(0) scaleY(1);
   }
 
   50% {
-    transform: translateY(5px) skewY(0.4deg);
+    transform: translateY(4px) scaleY(0.96);
+  }
+}
+
+@keyframes surface-horizon-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1);
+    filter: brightness(1);
+  }
+
+  35% {
+    transform: translateY(-1px) scaleX(1.012);
+    filter: brightness(1.12);
+  }
+
+  68% {
+    transform: translateY(1.5px) scaleX(0.992);
+    filter: brightness(0.92);
   }
 }
 
