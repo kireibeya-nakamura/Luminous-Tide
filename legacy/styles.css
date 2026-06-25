@@ -67,9 +67,9 @@ button {
     linear-gradient(180deg, #02030a 0%, #06111f 52%, #02050a 100%);
   transform-origin: 50% 48%;
   transition:
-    filter 860ms ease,
-    opacity 860ms ease,
-    transform 920ms cubic-bezier(0.22, 0.82, 0.18, 1);
+    filter 2100ms ease,
+    opacity 2100ms ease,
+    transform 2300ms cubic-bezier(0.2, 0.78, 0.16, 1);
 }
 
 .gesture-layer {
@@ -206,31 +206,36 @@ button {
 }
 
 .app-shell.is-dive-transitioning #tideCanvas {
-  opacity: 0.78;
-  filter: brightness(0.48) saturate(0.9) blur(0.4px);
-  transform: translateY(-22svh) scale(1.08);
+  opacity: 0.74;
+  filter: brightness(0.38) saturate(0.86) blur(0.45px);
+  transform: translateY(-32svh) scale(1.12);
+}
+
+.app-shell.is-dive-returning #tideCanvas {
+  animation: dive-canvas-return 2300ms cubic-bezier(0.2, 0.78, 0.16, 1) both;
 }
 
 .app-shell.is-dive-transitioning .gesture-layer,
+.app-shell.is-dive-returning .gesture-layer,
 .app-shell.is-diving .gesture-layer {
   pointer-events: none;
 }
 
 .app-shell.is-dive-transitioning .intro-panel {
   opacity: 0;
-  transform: translateY(-72px);
+  transform: translateY(-92px);
 }
 
 .app-shell.is-dive-transitioning .record-fab {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -86px) scale(0.94);
+  transform: translate(-50%, -116px) scale(0.94);
 }
 
 .app-shell.is-dive-transitioning .dive-fab {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-84px) scale(0.92);
+  transform: translateY(-112px) scale(0.92);
 }
 
 .dive-fab {
@@ -293,28 +298,57 @@ button {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 52% 16%, rgba(177, 231, 255, 0.18), transparent 26%),
-    linear-gradient(180deg, rgba(4, 15, 27, 0) 0%, rgba(3, 13, 25, 0.54) 48%, rgba(0, 3, 9, 0.92) 100%);
+    radial-gradient(ellipse at 52% 18%, rgba(177, 231, 255, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(4, 15, 27, 0) 0%, rgba(3, 13, 25, 0.42) 46%, rgba(0, 3, 9, 0.94) 100%);
   content: "";
 }
 
 .dive-transition-surface {
   position: absolute;
-  top: 34%;
+  top: 37svh;
   left: -14%;
   width: 128%;
-  height: 84px;
-  border-top: 1px solid rgba(139, 226, 255, 0.16);
+  height: 102px;
+  border-top: 1px solid rgba(154, 231, 255, 0.2);
   border-bottom: 1px solid rgba(139, 226, 255, 0.08);
   background:
-    radial-gradient(ellipse at 58% 42%, rgba(164, 225, 255, 0.22), transparent 38%),
+    radial-gradient(ellipse at 58% 36%, rgba(164, 225, 255, 0.26), transparent 42%),
     repeating-linear-gradient(
-      -4deg,
-      rgba(123, 212, 255, 0.17) 0 1px,
-      transparent 1px 13px
+      -3deg,
+      rgba(123, 212, 255, 0.18) 0 1px,
+      transparent 1px 15px
     );
-  box-shadow: 0 0 32px rgba(72, 229, 255, 0.1);
-  opacity: 0.64;
+  box-shadow:
+    0 -12px 28px rgba(107, 210, 255, 0.08),
+    0 14px 44px rgba(0, 0, 0, 0.22);
+  opacity: 0.78;
+}
+
+.dive-transition-surface::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(92, 183, 231, 0.02),
+    rgba(122, 226, 255, 0.5) 44%,
+    rgba(180, 152, 255, 0.2) 62%,
+    rgba(92, 183, 231, 0.02)
+  );
+  box-shadow: 0 0 18px rgba(88, 220, 255, 0.2);
+  content: "";
+}
+
+.dive-transition-surface::after {
+  position: absolute;
+  top: 1px;
+  left: 0;
+  width: 100%;
+  height: 86px;
+  background: linear-gradient(180deg, rgba(67, 163, 221, 0.18), rgba(4, 14, 25, 0));
+  content: "";
 }
 
 .dive-transition-depth {
@@ -327,20 +361,35 @@ button {
 }
 
 .app-shell.is-dive-transitioning .dive-transition {
-  animation: dive-camera-drop 980ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-camera-drop 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .app-shell.is-dive-transitioning .dive-transition-surface {
-  animation: dive-surface-pass 980ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-surface-pass 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .app-shell.is-dive-transitioning .dive-transition-depth {
-  animation: dive-depth-pass 980ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+  animation: dive-depth-pass 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+}
+
+.app-shell.is-dive-returning .dive-transition {
+  animation: dive-camera-rise 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+}
+
+.app-shell.is-dive-returning .dive-transition-surface {
+  animation: dive-surface-return 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+}
+
+.app-shell.is-dive-returning .dive-transition-depth {
+  animation: dive-depth-return 2350ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
 }
 
 .dive-fab.is-hidden,
 .app-shell.is-diving .record-fab,
 .app-shell.is-diving .dive-fab,
+.app-shell.is-dive-returning .record-fab,
+.app-shell.is-dive-returning .dive-fab,
+.app-shell.is-dive-returning .intro-panel,
 .app-shell.is-diving .intro-panel {
   opacity: 0;
   pointer-events: none;
@@ -370,16 +419,25 @@ button {
   color: var(--text);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(12svh) scale(1.028);
+  transform: translateY(20svh) scale(1.04);
   transition:
-    opacity 560ms ease,
-    transform 720ms cubic-bezier(0.18, 0.86, 0.18, 1);
+    opacity 1250ms ease,
+    transform 1650ms cubic-bezier(0.18, 0.86, 0.18, 1);
 }
 
 .dive-view.is-open {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
+}
+
+.app-shell.is-dive-returning .dive-view.is-open {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(18svh) scale(1.035);
+  transition:
+    opacity 1200ms ease 180ms,
+    transform 1850ms cubic-bezier(0.2, 0.78, 0.16, 1);
 }
 
 .dive-view::before {
@@ -639,60 +697,132 @@ button {
   0% {
     opacity: 0;
     filter: brightness(1);
-    transform: translateY(24px) scale(1.02);
+    transform: translateY(0) scale(1);
   }
 
-  18% {
-    opacity: 0.52;
+  16% {
+    opacity: 0.34;
   }
 
-  56% {
-    opacity: 0.88;
-    filter: brightness(0.84);
-    transform: translateY(-12px) scale(1.045);
+  58% {
+    opacity: 0.86;
+    filter: brightness(0.78);
+    transform: translateY(-16px) scale(1.035);
   }
 
   100% {
     opacity: 0;
-    filter: brightness(0.46);
-    transform: translateY(-56px) scale(1.08);
+    filter: brightness(0.42);
+    transform: translateY(-44px) scale(1.07);
   }
 }
 
 @keyframes dive-surface-pass {
   0% {
-    opacity: 0;
-    transform: translateY(130px) scaleY(0.72);
+    opacity: 0.86;
+    transform: translateY(0) scaleY(0.82);
   }
 
-  22% {
-    opacity: 0.68;
+  26% {
+    opacity: 0.82;
+    transform: translateY(-10svh) scaleY(0.92);
   }
 
-  68% {
+  72% {
     opacity: 0.58;
-    transform: translateY(-24px) scaleY(1);
+    transform: translateY(-36svh) scaleY(1);
   }
 
   100% {
-    opacity: 0;
-    transform: translateY(-176px) scaleY(1.08);
+    opacity: 0.06;
+    transform: translateY(-58svh) scaleY(1.08);
   }
 }
 
 @keyframes dive-depth-pass {
   0% {
-    opacity: 0.18;
-    transform: translateY(28%);
+    opacity: 0;
+    transform: translateY(22%);
   }
 
-  52% {
-    opacity: 0.78;
+  56% {
+    opacity: 0.72;
   }
 
   100% {
-    opacity: 0.22;
-    transform: translateY(-10%);
+    opacity: 0.18;
+    transform: translateY(-12%);
+  }
+}
+
+@keyframes dive-camera-rise {
+  0% {
+    opacity: 0.18;
+    filter: brightness(0.5);
+    transform: translateY(-44px) scale(1.07);
+  }
+
+  42% {
+    opacity: 0.84;
+    filter: brightness(0.78);
+  }
+
+  100% {
+    opacity: 0;
+    filter: brightness(1);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dive-surface-return {
+  0% {
+    opacity: 0.06;
+    transform: translateY(-58svh) scaleY(1.08);
+  }
+
+  34% {
+    opacity: 0.46;
+    transform: translateY(-35svh) scaleY(1);
+  }
+
+  72% {
+    opacity: 0.78;
+    transform: translateY(-8svh) scaleY(0.92);
+  }
+
+  100% {
+    opacity: 0.86;
+    transform: translateY(0) scaleY(0.82);
+  }
+}
+
+@keyframes dive-depth-return {
+  0% {
+    opacity: 0.16;
+    transform: translateY(-12%);
+  }
+
+  46% {
+    opacity: 0.72;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(22%);
+  }
+}
+
+@keyframes dive-canvas-return {
+  0% {
+    opacity: 0.74;
+    filter: brightness(0.38) saturate(0.86) blur(0.45px);
+    transform: translateY(-32svh) scale(1.12);
+  }
+
+  100% {
+    opacity: 1;
+    filter: brightness(1) saturate(1) blur(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1164,7 +1294,7 @@ form {
   }
 
   .app-shell.is-dive-transitioning .record-fab {
-    transform: translateY(-86px) scale(0.94);
+    transform: translateY(-116px) scale(0.94);
   }
 
   .dive-fab {

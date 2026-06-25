@@ -49,6 +49,9 @@ let flowY = 0;
 let diveRevealTimer = 0;
 let diveCleanupTimer = 0;
 
+const DIVE_REVEAL_MS = 1450;
+const DIVE_TRAVEL_MS = 2380;
+
 const pointer = {
   x: 0,
   y: 0,
@@ -1045,6 +1048,7 @@ function closeRecordPanel() {
 function openDiveView() {
   if (
     appShell?.classList.contains("is-dive-transitioning") ||
+    appShell?.classList.contains("is-dive-returning") ||
     appShell?.classList.contains("is-diving")
   ) {
     return;
@@ -1067,26 +1071,45 @@ function openDiveView() {
     diveView?.classList.add("is-open");
     diveView?.setAttribute("aria-hidden", "false");
     updateDiveScrollDepth();
-  }, 620);
+  }, DIVE_REVEAL_MS);
 
   diveCleanupTimer = window.setTimeout(() => {
     appShell?.classList.remove("is-dive-transitioning");
     diveRevealTimer = 0;
     diveCleanupTimer = 0;
-  }, 1040);
+  }, DIVE_TRAVEL_MS);
 }
 
 function closeDiveView() {
+  if (appShell?.classList.contains("is-dive-returning")) return;
+  const isOpening = appShell?.classList.contains("is-dive-transitioning");
+  const isDiving = appShell?.classList.contains("is-diving");
+  if (!isOpening && !isDiving) return;
+
   window.clearTimeout(diveRevealTimer);
   window.clearTimeout(diveCleanupTimer);
   diveRevealTimer = 0;
   diveCleanupTimer = 0;
-  appShell?.classList.remove("is-dive-transitioning", "is-diving");
-  diveView?.classList.remove("is-open");
-  diveView?.setAttribute("aria-hidden", "true");
+
+  if (isOpening && !isDiving) {
+    appShell?.classList.remove("is-dive-transitioning");
+    openDiveButton?.setAttribute("aria-expanded", "false");
+    return;
+  }
+
+  appShell?.classList.remove("is-dive-transitioning");
+  appShell?.classList.add("is-dive-returning");
   openDiveButton?.setAttribute("aria-expanded", "false");
-  if (diveLogList) diveLogList.scrollTop = 0;
   updateDiveScrollDepth();
+
+  diveCleanupTimer = window.setTimeout(() => {
+    appShell?.classList.remove("is-dive-returning", "is-diving");
+    diveView?.classList.remove("is-open");
+    diveView?.setAttribute("aria-hidden", "true");
+    if (diveLogList) diveLogList.scrollTop = 0;
+    updateDiveScrollDepth();
+    diveCleanupTimer = 0;
+  }, DIVE_TRAVEL_MS);
 }
 
 function effortSourcePoint() {
