@@ -21,6 +21,7 @@
 html,
 body {
   width: 100%;
+  max-width: 100%;
   min-height: 100%;
   margin: 0;
   overflow-x: hidden;
@@ -43,8 +44,11 @@ button {
 
 .app-shell {
   position: relative;
+  width: 100%;
+  max-width: 100%;
   min-height: 190svh;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: visible;
   padding: clamp(18px, 3vw, 36px);
 }
 
@@ -89,6 +93,8 @@ button {
   top: clamp(18px, 3vw, 36px);
   right: clamp(18px, 3vw, 36px);
   padding: 22px;
+  max-width: calc(100vw - 36px);
+  overflow-x: hidden;
   opacity: 0;
   pointer-events: none;
   transform: translateY(18px) scale(0.98);
@@ -263,6 +269,7 @@ h3 {
   flex: 0 0 auto;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .ghost-button,
@@ -463,36 +470,16 @@ form {
   line-height: 1.6;
 }
 
-.hint-bar {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  bottom: clamp(16px, 3vw, 28px);
-  display: flex;
-  max-width: calc(100% - 36px);
-  transform: translateX(-50%);
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.hint-bar span {
-  border: 1px solid rgba(118, 210, 255, 0.16);
-  border-radius: 999px;
-  padding: 8px 12px;
-  background: rgba(4, 10, 18, 0.54);
-  color: var(--muted);
-  font-size: 0.82rem;
-  backdrop-filter: blur(14px);
-}
-
 @media (max-width: 920px) {
   html,
   body {
+    max-width: 100%;
     height: auto;
     min-height: 210svh;
+    overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: none;
   }
 
   .app-shell {
@@ -505,7 +492,8 @@ form {
       calc(12px + env(safe-area-inset-top))
       12px
       calc(24px + env(safe-area-inset-bottom));
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .intro-panel,
@@ -533,28 +521,18 @@ form {
     left: 12px;
     order: 3;
     max-height: min(72svh, 620px);
+    max-width: none;
     margin-top: 0;
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
     transform: translateY(22px) scale(0.97);
     transform-origin: 50% 100%;
   }
 
   .record-panel.is-open {
     transform: translateY(0) scale(1);
-  }
-
-  .hint-bar {
-    position: relative;
-    order: 4;
-    left: auto;
-    bottom: auto;
-    width: 100%;
-    max-width: 520px;
-    margin-top: clamp(660px, 92svh, 940px);
-    margin-right: auto;
-    margin-left: auto;
-    transform: none;
-    pointer-events: none;
   }
 }
 
@@ -595,6 +573,11 @@ form {
     max-width: none !important;
     margin-top: 0;
     background: rgba(5, 12, 22, 0.86);
+  }
+
+  .record-panel,
+  .record-panel * {
+    max-width: 100%;
   }
 
   .record-fab {
@@ -642,11 +625,22 @@ form {
     gap: 12px;
   }
 
-  .ghost-button {
+  .panel-actions {
     width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .ghost-button {
+    width: auto;
+    min-width: 0;
     min-height: 34px;
     padding: 0 10px;
     font-size: 0.84rem;
+  }
+
+  .panel-actions .text-button {
+    white-space: nowrap;
   }
 
   .duration-row {
@@ -656,21 +650,5 @@ form {
 
   .duration-control {
     width: 140px;
-  }
-
-  .hint-bar {
-    width: calc(100vw - 20px) !important;
-    max-width: calc(100vw - 20px) !important;
-    justify-self: stretch;
-    margin-right: 0;
-    margin-left: 0;
-    gap: 6px;
-    justify-content: flex-start;
-  }
-
-  .hint-bar span {
-    padding: 6px 9px;
-    background: rgba(4, 10, 18, 0.58);
-    font-size: 0.72rem;
   }
 }
