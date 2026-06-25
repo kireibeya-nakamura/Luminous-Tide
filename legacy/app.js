@@ -1,5 +1,6 @@
 const canvas = document.querySelector("#tideCanvas");
 const ctx = canvas.getContext("2d");
+const gestureLayer = document.querySelector("#gestureLayer");
 
 const form = document.querySelector("#effortForm");
 const minutesInput = document.querySelector("#minutesInput");
@@ -652,16 +653,35 @@ function isUiTarget(event) {
   return Boolean(event.target?.closest?.(".panel, button, input, label, select, textarea, a"));
 }
 
-window.addEventListener("pointermove", (event) => {
+const pointerTarget = gestureLayer || window;
+
+function captureGesturePointer(pointerId) {
+  try {
+    gestureLayer?.setPointerCapture?.(pointerId);
+  } catch {
+    // Some mobile browsers cancel pointer capture when a scroll gesture wins.
+  }
+}
+
+function releaseGesturePointer(pointerId) {
+  try {
+    gestureLayer?.releasePointerCapture?.(pointerId);
+  } catch {
+    // The pointer may already be released after a browser scroll or cancel.
+  }
+}
+
+pointerTarget.addEventListener("pointermove", (event) => {
   if (isUiTarget(event)) return;
   setPointer(event);
 });
-window.addEventListener("pointerleave", () => {
+pointerTarget.addEventListener("pointerleave", () => {
   pointer.active = false;
   pointer.down = false;
 });
-window.addEventListener("pointerdown", (event) => {
+pointerTarget.addEventListener("pointerdown", (event) => {
   if (isUiTarget(event)) return;
+  captureGesturePointer(event.pointerId);
   setPointer(event);
   pointer.down = true;
   if (isInsideWater(pointer.x, pointer.y)) {
@@ -670,12 +690,14 @@ window.addEventListener("pointerdown", (event) => {
     visualEnergy = Math.min(2.6, visualEnergy + 0.65);
   }
 });
-window.addEventListener("pointerup", () => {
+pointerTarget.addEventListener("pointerup", (event) => {
   pointer.down = false;
+  releaseGesturePointer(event.pointerId);
 });
-window.addEventListener("pointercancel", () => {
+pointerTarget.addEventListener("pointercancel", (event) => {
   pointer.down = false;
   pointer.active = false;
+  releaseGesturePointer(event.pointerId);
 });
 
 form.addEventListener("submit", (event) => {

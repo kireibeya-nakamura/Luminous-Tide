@@ -4,10 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Luminous Tide Prototype</title>
-    <link rel="stylesheet" href="styles.css?v=mobile-scroll-2" />
+    <link rel="stylesheet" href="styles.css?v=mobile-gesture-3" />
   </head>
   <body>
     <main class="app-shell">
+      <div id="gestureLayer" class="gesture-layer" aria-hidden="true"></div>
       <canvas id="tideCanvas" aria-label="努力の蓄積で育つ発光する水面"></canvas>
 
       <section class="panel intro-panel" aria-label="現在の努力の状態">
@@ -96,6 +97,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=mobile-scroll-2"></script>
+    <script src="app.js?v=mobile-gesture-3"></script>
   </body>
 </html>

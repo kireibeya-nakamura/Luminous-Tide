@@ -60,6 +60,15 @@ button {
     linear-gradient(180deg, #02030a 0%, #06111f 52%, #02050a 100%);
 }
 
+.gesture-layer {
+  position: fixed;
+  z-index: 1;
+  inset: 0;
+  background: transparent;
+  pointer-events: auto;
+  touch-action: pan-y;
+}
+
 .panel {
   position: relative;
   z-index: 2;
