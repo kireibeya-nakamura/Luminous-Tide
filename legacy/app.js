@@ -150,28 +150,41 @@ function resizeCanvas() {
 function waterBounds() {
   const m = metrics();
   const mobile = width < 760;
-  const rx = Math.min(width * (mobile ? 0.72 : 0.52), mobile ? 520 : 880);
-  const ry = Math.min(height * (mobile ? 0.24 : 0.28), mobile ? 210 : 310);
+  const horizon = height * (mobile ? 0.38 : 0.4) - m.waterLevel * height * 0.035;
+  const depth = height - horizon;
   return {
-    cx: width * (mobile ? 0.5 : 0.48),
-    cy: height * (mobile ? 0.61 : 0.64),
-    rx: rx * (0.86 + m.waterLevel * 0.16),
-    ry: ry * (0.82 + m.waterLevel * 0.14),
+    horizon,
+    bottom: height,
+    left: -width * 0.18,
+    right: width * 1.18,
+    cx: width * 0.5,
+    cy: horizon + depth * 0.54,
+    rx: width * 0.48,
+    ry: depth * 0.44,
+    depth,
+    surfaceAmp: mobile ? 4.2 : 6.4,
   };
 }
 
+function surfaceY(x, bounds = waterBounds(), time = 0) {
+  return (
+    bounds.horizon +
+    Math.sin(x * 0.014 + time * 0.42) * bounds.surfaceAmp +
+    Math.sin(x * 0.036 - time * 0.27) * bounds.surfaceAmp * 0.34
+  );
+}
+
 function isInsideWater(x, y, bounds = waterBounds()) {
-  const nx = (x - bounds.cx) / bounds.rx;
-  const ny = (y - bounds.cy) / bounds.ry;
-  return nx * nx + ny * ny <= 1;
+  return x >= -40 && x <= width + 40 && y >= surfaceY(x, bounds) - 12 && y <= bounds.bottom + 40;
 }
 
 function randomPointInWater(bounds = waterBounds()) {
-  const angle = Math.random() * Math.PI * 2;
-  const radius = Math.sqrt(Math.random()) * 0.98;
+  const x = Math.random() * width;
+  const top = surfaceY(x, bounds) + 12;
+  const depthRatio = 0.08 + Math.random() ** 0.72 * 0.86;
   return {
-    x: bounds.cx + Math.cos(angle) * bounds.rx * radius,
-    y: bounds.cy + Math.sin(angle) * bounds.ry * radius,
+    x,
+    y: top + (bounds.bottom - top) * depthRatio,
   };
 }
 
@@ -333,6 +346,7 @@ function adjustParticleCount() {
 }
 
 function drawBackground(time, m) {
+  const bounds = waterBounds();
   const grd = ctx.createLinearGradient(0, 0, 0, height);
   grd.addColorStop(0, "#010209");
   grd.addColorStop(0.46, "#06111f");
@@ -354,6 +368,28 @@ function drawBackground(time, m) {
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
 
+  const horizonGlow = ctx.createLinearGradient(0, bounds.horizon - 78, 0, bounds.horizon + 72);
+  horizonGlow.addColorStop(0, "rgba(10, 28, 48, 0)");
+  horizonGlow.addColorStop(0.55, "rgba(57, 131, 174, 0.16)");
+  horizonGlow.addColorStop(1, "rgba(5, 15, 27, 0)");
+  ctx.fillStyle = horizonGlow;
+  ctx.fillRect(0, bounds.horizon - 78, width, 150);
+
+  ctx.save();
+  ctx.globalAlpha = 0.34;
+  ctx.fillStyle = "rgba(0, 4, 10, 0.78)";
+  ctx.beginPath();
+  ctx.moveTo(-20, bounds.horizon + 4);
+  for (let x = -20; x <= width * 0.4; x += 28) {
+    const hill = Math.sin(x * 0.018 + 1.8) * 6 + Math.sin(x * 0.045) * 2;
+    ctx.lineTo(x, bounds.horizon - 7 + hill);
+  }
+  ctx.lineTo(width * 0.42, bounds.horizon + 8);
+  ctx.lineTo(-20, bounds.horizon + 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
   ctx.save();
   ctx.globalAlpha = 0.12;
   ctx.strokeStyle = "#4fe6ff";
@@ -371,50 +407,75 @@ function drawBackground(time, m) {
   ctx.restore();
 }
 
-function clipWater(bounds) {
+function traceWaterPath(bounds, time = 0) {
   ctx.beginPath();
-  ctx.ellipse(bounds.cx, bounds.cy, bounds.rx, bounds.ry, 0, 0, Math.PI * 2);
+  ctx.moveTo(bounds.left, bounds.bottom + 4);
+  ctx.lineTo(bounds.left, surfaceY(bounds.left, bounds, time));
+  for (let x = bounds.left; x <= bounds.right; x += 18) {
+    ctx.lineTo(x, surfaceY(x, bounds, time));
+  }
+  ctx.lineTo(bounds.right, bounds.bottom + 4);
+  ctx.closePath();
+}
+
+function traceSurfaceLine(bounds, time = 0) {
+  ctx.beginPath();
+  for (let x = bounds.left; x <= bounds.right; x += 16) {
+    const y = surfaceY(x, bounds, time);
+    if (x === bounds.left) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+}
+
+function clipWater(bounds, time = 0) {
+  traceWaterPath(bounds, time);
   ctx.clip();
 }
 
 function drawWaterBase(bounds, time, m) {
   ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(bounds.cx, bounds.cy, bounds.rx, bounds.ry, 0, 0, Math.PI * 2);
+  traceWaterPath(bounds, time);
 
-  const base = ctx.createRadialGradient(
-    bounds.cx,
-    bounds.cy,
-    bounds.ry * 0.1,
-    bounds.cx,
-    bounds.cy,
-    bounds.rx,
-  );
-  base.addColorStop(0, `rgba(21, 115, 166, ${0.34 + m.waterLevel * 0.25})`);
-  base.addColorStop(0.48, "rgba(7, 45, 80, 0.78)");
-  base.addColorStop(1, "rgba(1, 8, 18, 0.96)");
+  const base = ctx.createLinearGradient(0, bounds.horizon, 0, bounds.bottom);
+  base.addColorStop(0, `rgba(11, 42, 68, ${0.66 + m.waterLevel * 0.1})`);
+  base.addColorStop(0.28, "rgba(7, 32, 58, 0.88)");
+  base.addColorStop(0.68, "rgba(4, 18, 35, 0.96)");
+  base.addColorStop(1, "rgba(1, 6, 14, 0.99)");
   ctx.fillStyle = base;
   ctx.fill();
 
   ctx.save();
-  clipWater(bounds);
+  clipWater(bounds, time);
   ctx.globalCompositeOperation = "screen";
-  for (let i = 0; i < 18; i += 1) {
-    const y = bounds.cy - bounds.ry * 0.6 + (i / 17) * bounds.ry * 1.2;
-    const amp = 7 + m.glow * 2 + i * 0.22;
-    const alpha = 0.045 + m.glow * 0.012;
+  for (let i = 0; i < 28; i += 1) {
+    const t = i / 27;
+    const y = bounds.horizon + 10 + bounds.depth * (t ** 1.58) * 0.9;
+    const amp = 1.2 + t * 9.5 + m.glow * 0.75;
+    const alpha = 0.035 + t * 0.05 + m.glow * 0.006;
     ctx.beginPath();
-    for (let x = bounds.cx - bounds.rx; x <= bounds.cx + bounds.rx; x += 10) {
+    for (let x = bounds.left; x <= bounds.right; x += 11) {
       const wave =
-        Math.sin(x * 0.015 + time * (0.22 + i * 0.01) + i * 0.8) * amp +
-        Math.sin(x * 0.041 - time * 0.18 + i) * amp * 0.28;
-      if (x === bounds.cx - bounds.rx) ctx.moveTo(x, y + wave);
+        Math.sin(x * (0.014 + t * 0.018) + time * (0.22 + t * 0.22) + i * 0.68) * amp +
+        Math.sin(x * (0.038 + t * 0.032) - time * 0.16 + i) * amp * 0.22;
+      if (x === bounds.left) ctx.moveTo(x, y + wave);
       else ctx.lineTo(x, y + wave);
     }
     ctx.strokeStyle = `rgba(83, 226, 255, ${alpha})`;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.7 + t * 1.1;
     ctx.stroke();
   }
+
+  const moonPath = ctx.createLinearGradient(width * 0.52, bounds.horizon, width * 0.5, bounds.bottom);
+  moonPath.addColorStop(0, "rgba(162, 220, 255, 0.18)");
+  moonPath.addColorStop(0.34, "rgba(76, 190, 255, 0.1)");
+  moonPath.addColorStop(1, "rgba(76, 190, 255, 0)");
+  ctx.fillStyle = moonPath;
+  ctx.beginPath();
+  ctx.moveTo(width * 0.47, bounds.horizon);
+  ctx.bezierCurveTo(width * 0.58, bounds.horizon + bounds.depth * 0.18, width * 0.61, bounds.bottom, width * 0.52, bounds.bottom);
+  ctx.bezierCurveTo(width * 0.45, bounds.bottom, width * 0.44, bounds.horizon + bounds.depth * 0.2, width * 0.49, bounds.horizon);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 
   const rimAlpha = 0.18 + m.glow * 0.08;
@@ -422,20 +483,17 @@ function drawWaterBase(bounds, time, m) {
   ctx.shadowBlur = 24 + m.glow * 8;
   ctx.lineWidth = 1.3;
   ctx.strokeStyle = `rgba(107, 232, 255, ${rimAlpha})`;
+  traceSurfaceLine(bounds, time);
   ctx.stroke();
 
-  const rim = ctx.createLinearGradient(
-    bounds.cx - bounds.rx,
-    bounds.cy,
-    bounds.cx + bounds.rx,
-    bounds.cy,
-  );
+  const rim = ctx.createLinearGradient(0, bounds.horizon, width, bounds.horizon);
   rim.addColorStop(0, "rgba(80, 113, 180, 0)");
   rim.addColorStop(0.44, `rgba(88, 240, 255, ${0.22 + m.glow * 0.05})`);
   rim.addColorStop(0.55, `rgba(147, 113, 255, ${0.14 + m.glow * 0.04})`);
   rim.addColorStop(1, "rgba(80, 113, 180, 0)");
   ctx.strokeStyle = rim;
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3.2;
+  traceSurfaceLine(bounds, time + 0.8);
   ctx.stroke();
   ctx.restore();
 }
@@ -481,15 +539,18 @@ function updateParticles(dt, time, bounds, m) {
     p.x += p.vx * dt * 60;
     p.y += p.vy * dt * 60;
 
-    const nx = (p.x - bounds.cx) / bounds.rx;
-    const ny = (p.y - bounds.cy) / bounds.ry;
-    const distanceFromCenter = nx * nx + ny * ny;
-    if (distanceFromCenter > 1) {
-      const angle = Math.atan2(ny, nx);
-      p.x = bounds.cx + Math.cos(angle) * bounds.rx * 0.96;
-      p.y = bounds.cy + Math.sin(angle) * bounds.ry * 0.96;
-      p.vx *= -0.45;
-      p.vy *= -0.45;
+    if (p.x < -28) p.x = width + 28;
+    if (p.x > width + 28) p.x = -28;
+
+    const top = surfaceY(p.x, bounds, time) + 10;
+    if (p.y < top) {
+      p.y = top + 8 + Math.random() * 22;
+      p.vy = Math.abs(p.vy) * 0.42;
+    }
+
+    if (p.y > bounds.bottom + 24) {
+      p.y = top + Math.random() * bounds.depth * 0.76;
+      p.vy *= -0.28;
     }
   }
 }
@@ -539,7 +600,7 @@ function updateTransient(dt) {
 
 function drawParticles(bounds, time, m) {
   ctx.save();
-  clipWater(bounds);
+  clipWater(bounds, time);
   ctx.globalCompositeOperation = "lighter";
 
   for (const p of particles) {
@@ -602,9 +663,9 @@ function drawDissolveMotes(time) {
   ctx.restore();
 }
 
-function drawRipples(bounds) {
+function drawRipples(bounds, time = 0) {
   ctx.save();
-  clipWater(bounds);
+  clipWater(bounds, time);
   ctx.globalCompositeOperation = "lighter";
 
   for (const trail of trails) {
@@ -672,24 +733,16 @@ function drawRipples(bounds) {
   ctx.restore();
 }
 
-function drawDepthShade(bounds) {
+function drawDepthShade(bounds, time = 0) {
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
-  const shade = ctx.createRadialGradient(
-    bounds.cx,
-    bounds.cy + bounds.ry * 0.18,
-    bounds.ry * 0.2,
-    bounds.cx,
-    bounds.cy + bounds.ry * 0.22,
-    bounds.rx * 1.05,
-  );
+  clipWater(bounds, time);
+  const shade = ctx.createLinearGradient(0, bounds.horizon, 0, bounds.bottom);
   shade.addColorStop(0, "rgba(0, 0, 0, 0)");
-  shade.addColorStop(0.72, "rgba(0, 0, 0, 0.18)");
-  shade.addColorStop(1, "rgba(0, 0, 0, 0.72)");
+  shade.addColorStop(0.54, "rgba(0, 0, 0, 0.2)");
+  shade.addColorStop(1, "rgba(0, 0, 0, 0.76)");
   ctx.fillStyle = shade;
-  ctx.beginPath();
-  ctx.ellipse(bounds.cx, bounds.cy, bounds.rx * 1.02, bounds.ry * 1.02, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillRect(0, bounds.horizon, width, bounds.depth);
   ctx.restore();
 }
 
@@ -706,9 +759,9 @@ function frame(now) {
 
   drawBackground(time, m);
   drawWaterBase(bounds, time, m);
-  drawRipples(bounds);
+  drawRipples(bounds, time);
   drawParticles(bounds, time, m);
-  drawDepthShade(bounds);
+  drawDepthShade(bounds, time);
   drawDissolveMotes(time);
 
   requestAnimationFrame(frame);
