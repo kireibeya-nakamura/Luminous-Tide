@@ -65,6 +65,11 @@ button {
   background:
     radial-gradient(circle at 50% 75%, rgba(14, 92, 142, 0.25), transparent 34%),
     linear-gradient(180deg, #02030a 0%, #06111f 52%, #02050a 100%);
+  transform-origin: 50% 48%;
+  transition:
+    filter 860ms ease,
+    opacity 860ms ease,
+    transform 920ms cubic-bezier(0.22, 0.82, 0.18, 1);
 }
 
 .gesture-layer {
@@ -118,6 +123,9 @@ button {
   color: rgba(230, 244, 255, 0.56);
   backdrop-filter: none;
   pointer-events: none;
+  transition:
+    opacity 520ms ease,
+    transform 640ms cubic-bezier(0.22, 0.82, 0.18, 1);
 }
 
 .record-panel {
@@ -197,6 +205,34 @@ button {
   transform: translate(-50%, 12px) scale(0.96);
 }
 
+.app-shell.is-dive-transitioning #tideCanvas {
+  opacity: 0.78;
+  filter: brightness(0.48) saturate(0.9) blur(0.4px);
+  transform: translateY(-22svh) scale(1.08);
+}
+
+.app-shell.is-dive-transitioning .gesture-layer,
+.app-shell.is-diving .gesture-layer {
+  pointer-events: none;
+}
+
+.app-shell.is-dive-transitioning .intro-panel {
+  opacity: 0;
+  transform: translateY(-72px);
+}
+
+.app-shell.is-dive-transitioning .record-fab {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -86px) scale(0.94);
+}
+
+.app-shell.is-dive-transitioning .dive-fab {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-84px) scale(0.92);
+}
+
 .dive-fab {
   position: fixed;
   z-index: 4;
@@ -243,6 +279,65 @@ button {
     inset 0 1px 0 rgba(255, 255, 255, 0.055);
 }
 
+.dive-transition {
+  position: fixed;
+  z-index: 6;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(24px) scale(1.02);
+}
+
+.dive-transition::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 52% 16%, rgba(177, 231, 255, 0.18), transparent 26%),
+    linear-gradient(180deg, rgba(4, 15, 27, 0) 0%, rgba(3, 13, 25, 0.54) 48%, rgba(0, 3, 9, 0.92) 100%);
+  content: "";
+}
+
+.dive-transition-surface {
+  position: absolute;
+  top: 34%;
+  left: -14%;
+  width: 128%;
+  height: 84px;
+  border-top: 1px solid rgba(139, 226, 255, 0.16);
+  border-bottom: 1px solid rgba(139, 226, 255, 0.08);
+  background:
+    radial-gradient(ellipse at 58% 42%, rgba(164, 225, 255, 0.22), transparent 38%),
+    repeating-linear-gradient(
+      -4deg,
+      rgba(123, 212, 255, 0.17) 0 1px,
+      transparent 1px 13px
+    );
+  box-shadow: 0 0 32px rgba(72, 229, 255, 0.1);
+  opacity: 0.64;
+}
+
+.dive-transition-depth {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 48% 72%, rgba(48, 177, 255, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(1, 5, 12, 0.24) 44%, rgba(0, 1, 5, 0.72) 100%);
+  transform: translateY(26%);
+}
+
+.app-shell.is-dive-transitioning .dive-transition {
+  animation: dive-camera-drop 980ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+}
+
+.app-shell.is-dive-transitioning .dive-transition-surface {
+  animation: dive-surface-pass 980ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+}
+
+.app-shell.is-dive-transitioning .dive-transition-depth {
+  animation: dive-depth-pass 980ms cubic-bezier(0.18, 0.72, 0.16, 1) both;
+}
+
 .dive-fab.is-hidden,
 .app-shell.is-diving .record-fab,
 .app-shell.is-diving .dive-fab,
@@ -260,6 +355,11 @@ button {
 }
 
 .dive-view {
+  --dive-scroll: 0;
+  --dive-dark-opacity: 0;
+  --dive-surface-offset: 0px;
+  --dive-surface-opacity: 0.78;
+  --dive-light-opacity: 0.76;
   position: fixed;
   z-index: 5;
   inset: 0;
@@ -270,9 +370,9 @@ button {
   color: var(--text);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(28px) scale(1.018);
+  transform: translateY(12svh) scale(1.028);
   transition:
-    opacity 620ms ease,
+    opacity 560ms ease,
     transform 720ms cubic-bezier(0.18, 0.86, 0.18, 1);
 }
 
@@ -299,9 +399,22 @@ button {
   animation: dive-particles 16s linear infinite;
 }
 
+.dive-view::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 8, 16, 0), rgba(0, 0, 0, 0.34) 62%),
+    rgba(0, 2, 7, 0.52);
+  opacity: var(--dive-dark-opacity);
+  pointer-events: none;
+  content: "";
+  transition: opacity 120ms linear;
+}
+
 .dive-surface {
   position: absolute;
-  top: -18px;
+  top: calc(-18px + var(--dive-surface-offset));
   left: -8%;
   width: 116%;
   height: 158px;
@@ -315,7 +428,7 @@ button {
     linear-gradient(180deg, rgba(85, 162, 218, 0.22), rgba(2, 12, 22, 0));
   border-bottom: 1px solid rgba(169, 228, 255, 0.12);
   filter: blur(0.2px);
-  opacity: 0.78;
+  opacity: var(--dive-surface-opacity);
   transform-origin: 50% 0;
   animation: dive-surface 7s ease-in-out infinite;
 }
@@ -330,7 +443,7 @@ button {
     radial-gradient(ellipse at 50% 0%, rgba(170, 226, 255, 0.18), transparent 36%),
     linear-gradient(180deg, rgba(91, 185, 255, 0.18), rgba(41, 154, 220, 0.035) 48%, transparent 100%);
   filter: blur(1.4px);
-  opacity: 0.76;
+  opacity: var(--dive-light-opacity);
   transform: translateX(-50%);
 }
 
@@ -341,8 +454,8 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  width: min(100%, 460px);
-  margin: 0 auto;
+  width: min(100%, 360px);
+  margin: 0 auto 0 0;
   padding:
     calc(22px + env(safe-area-inset-top))
     22px
@@ -372,9 +485,9 @@ button {
 .dive-log-wrap {
   position: relative;
   z-index: 1;
-  width: min(100%, 430px);
+  width: min(100%, 360px);
   height: calc(100svh - 112px - env(safe-area-inset-top));
-  margin: 0 auto;
+  margin: 0 auto 0 0;
   overflow: hidden;
   padding: 8px 20px calc(22px + env(safe-area-inset-bottom));
 }
@@ -418,7 +531,7 @@ button {
   position: relative;
   display: grid;
   gap: 4px;
-  width: min(76%, 270px);
+  width: min(72%, 238px);
   min-height: 58px;
   border: 1px solid rgba(157, 225, 255, 0.13);
   border-radius: 16px;
@@ -434,12 +547,12 @@ button {
 
 .dive-log-item.is-left {
   justify-self: start;
-  transform: translateX(8px) scale(var(--dive-scale, 1));
+  transform: translateX(24px) scale(var(--dive-scale, 1));
 }
 
 .dive-log-item.is-right {
   justify-self: end;
-  transform: translateX(-8px) scale(var(--dive-scale, 1));
+  transform: translateX(-36px) scale(var(--dive-scale, 1));
 }
 
 .dive-log-item::before {
@@ -519,6 +632,67 @@ button {
 
   50% {
     transform: translateY(5px) skewY(0.4deg);
+  }
+}
+
+@keyframes dive-camera-drop {
+  0% {
+    opacity: 0;
+    filter: brightness(1);
+    transform: translateY(24px) scale(1.02);
+  }
+
+  18% {
+    opacity: 0.52;
+  }
+
+  56% {
+    opacity: 0.88;
+    filter: brightness(0.84);
+    transform: translateY(-12px) scale(1.045);
+  }
+
+  100% {
+    opacity: 0;
+    filter: brightness(0.46);
+    transform: translateY(-56px) scale(1.08);
+  }
+}
+
+@keyframes dive-surface-pass {
+  0% {
+    opacity: 0;
+    transform: translateY(130px) scaleY(0.72);
+  }
+
+  22% {
+    opacity: 0.68;
+  }
+
+  68% {
+    opacity: 0.58;
+    transform: translateY(-24px) scaleY(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-176px) scaleY(1.08);
+  }
+}
+
+@keyframes dive-depth-pass {
+  0% {
+    opacity: 0.18;
+    transform: translateY(28%);
+  }
+
+  52% {
+    opacity: 0.78;
+  }
+
+  100% {
+    opacity: 0.22;
+    transform: translateY(-10%);
   }
 }
 
@@ -989,6 +1163,10 @@ form {
     transform: translateY(12px) scale(0.96);
   }
 
+  .app-shell.is-dive-transitioning .record-fab {
+    transform: translateY(-86px) scale(0.94);
+  }
+
   .dive-fab {
     z-index: 4;
     right: max(16px, calc(100vw - 377px));
@@ -1002,6 +1180,9 @@ form {
   }
 
   .dive-header {
+    width: min(100%, 360px);
+    margin-right: auto;
+    margin-left: 0;
     padding:
       calc(18px + env(safe-area-inset-top))
       18px
@@ -1009,6 +1190,9 @@ form {
   }
 
   .dive-log-wrap {
+    width: min(100%, 360px);
+    margin-right: auto;
+    margin-left: 0;
     height: calc(100svh - 98px - env(safe-area-inset-top));
     padding-right: 14px;
     padding-left: 14px;
@@ -1020,7 +1204,15 @@ form {
   }
 
   .dive-log-item {
-    width: min(78%, 260px);
+    width: min(72%, 238px);
+  }
+
+  .dive-log-item.is-left {
+    transform: translateX(24px) scale(var(--dive-scale, 1));
+  }
+
+  .dive-log-item.is-right {
+    transform: translateX(-36px) scale(var(--dive-scale, 1));
   }
 
   h1 {

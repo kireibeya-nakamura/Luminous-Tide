@@ -46,6 +46,8 @@ let lastTime = performance.now();
 let visualEnergy = 0;
 let flowX = 0;
 let flowY = 0;
+let diveRevealTimer = 0;
+let diveCleanupTimer = 0;
 
 const pointer = {
   x: 0,
@@ -361,6 +363,16 @@ function renderDiveLog() {
     item.append(row, date);
     diveLogList.append(item);
   }
+}
+
+function updateDiveScrollDepth() {
+  if (!diveView || !diveLogList) return;
+  const depth = clamp(diveLogList.scrollTop / 380, 0, 1);
+  diveView.style.setProperty("--dive-scroll", depth.toFixed(3));
+  diveView.style.setProperty("--dive-dark-opacity", (depth * 0.72).toFixed(3));
+  diveView.style.setProperty("--dive-surface-offset", `${(-depth * 122).toFixed(1)}px`);
+  diveView.style.setProperty("--dive-surface-opacity", clamp(0.78 - depth * 0.66, 0.1, 0.78).toFixed(3));
+  diveView.style.setProperty("--dive-light-opacity", clamp(0.76 - depth * 0.36, 0.34, 0.76).toFixed(3));
 }
 
 function updateUi() {
@@ -1031,22 +1043,50 @@ function closeRecordPanel() {
 }
 
 function openDiveView() {
+  if (
+    appShell?.classList.contains("is-dive-transitioning") ||
+    appShell?.classList.contains("is-diving")
+  ) {
+    return;
+  }
+
   closeRecordPanel();
   renderDiveLog();
-  appShell?.classList.add("is-diving");
-  diveView?.classList.add("is-open");
-  diveView?.setAttribute("aria-hidden", "false");
   openDiveButton?.setAttribute("aria-expanded", "true");
   if (diveLogList) diveLogList.scrollTop = 0;
+  updateDiveScrollDepth();
+  appShell?.classList.add("is-dive-transitioning");
   visualEnergy = Math.min(2.8, visualEnergy + 0.42);
   flowY = Math.min(1.2, flowY + 0.34);
+
+  window.clearTimeout(diveRevealTimer);
+  window.clearTimeout(diveCleanupTimer);
+
+  diveRevealTimer = window.setTimeout(() => {
+    appShell?.classList.add("is-diving");
+    diveView?.classList.add("is-open");
+    diveView?.setAttribute("aria-hidden", "false");
+    updateDiveScrollDepth();
+  }, 620);
+
+  diveCleanupTimer = window.setTimeout(() => {
+    appShell?.classList.remove("is-dive-transitioning");
+    diveRevealTimer = 0;
+    diveCleanupTimer = 0;
+  }, 1040);
 }
 
 function closeDiveView() {
-  appShell?.classList.remove("is-diving");
+  window.clearTimeout(diveRevealTimer);
+  window.clearTimeout(diveCleanupTimer);
+  diveRevealTimer = 0;
+  diveCleanupTimer = 0;
+  appShell?.classList.remove("is-dive-transitioning", "is-diving");
   diveView?.classList.remove("is-open");
   diveView?.setAttribute("aria-hidden", "true");
   openDiveButton?.setAttribute("aria-expanded", "false");
+  if (diveLogList) diveLogList.scrollTop = 0;
+  updateDiveScrollDepth();
 }
 
 function effortSourcePoint() {
@@ -1065,6 +1105,7 @@ closeRecordButton?.addEventListener("click", closeRecordPanel);
 recordScrim?.addEventListener("click", closeRecordPanel);
 openDiveButton?.addEventListener("click", openDiveView);
 closeDiveButton?.addEventListener("click", closeDiveView);
+diveLogList?.addEventListener("scroll", updateDiveScrollDepth, { passive: true });
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -1133,5 +1174,6 @@ window.addEventListener("resize", resizeCanvas);
 
 resizeCanvas();
 updateUi();
+updateDiveScrollDepth();
 for (let i = 0; i < (window.innerWidth < 760 ? 120 : 260); i += 1) spawnParticle();
 requestAnimationFrame(frame);
