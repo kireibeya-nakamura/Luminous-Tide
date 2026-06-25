@@ -16,7 +16,7 @@ const closeRecordButton = document.querySelector("#closeRecordButton");
 
 const STORAGE_KEY = "luminous-tide-prototype-v1";
 const MAX_PARTICLES_DESKTOP = 1450;
-const MAX_PARTICLES_MOBILE = 520;
+const MAX_PARTICLES_MOBILE = 360;
 
 const categories = {
   portfolio: { label: "制作", color: "#48e5ff", hue: 188 },
@@ -338,15 +338,23 @@ function updateUi() {
 
 function adjustParticleCount() {
   const m = metrics();
-  const max = width < 760 ? MAX_PARTICLES_MOBILE : MAX_PARTICLES_DESKTOP;
-  const target = Math.floor(190 + max * m.density);
+  const mobile = width < 760;
+  const max = mobile ? MAX_PARTICLES_MOBILE : MAX_PARTICLES_DESKTOP;
+  const base = mobile ? 80 : 190;
+  const target = Math.floor(base + max * m.density);
   const bounds = waterBounds();
   while (particles.length < target) spawnParticle(bounds);
-  if (particles.length > target + 80) particles.length = target;
+  if (particles.length > target + (mobile ? 38 : 80)) particles.length = target;
 }
 
 function drawBackground(time, m) {
   const bounds = waterBounds();
+  const mobile = width < 760;
+  const moon = {
+    x: width * (mobile ? 0.68 : 0.66),
+    y: height * (mobile ? 0.19 : 0.18),
+    r: Math.min(width, height) * (mobile ? 0.035 : 0.032),
+  };
   const grd = ctx.createLinearGradient(0, 0, 0, height);
   grd.addColorStop(0, "#010209");
   grd.addColorStop(0.46, "#06111f");
@@ -376,6 +384,35 @@ function drawBackground(time, m) {
   ctx.fillRect(0, bounds.horizon - 78, width, 150);
 
   ctx.save();
+  const moonGlow = ctx.createRadialGradient(moon.x, moon.y, 0, moon.x, moon.y, moon.r * 5.4);
+  moonGlow.addColorStop(0, "rgba(210, 237, 255, 0.16)");
+  moonGlow.addColorStop(0.28, "rgba(110, 183, 255, 0.08)");
+  moonGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = moonGlow;
+  ctx.beginPath();
+  ctx.arc(moon.x, moon.y, moon.r * 5.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  const moonFill = ctx.createRadialGradient(
+    moon.x - moon.r * 0.32,
+    moon.y - moon.r * 0.32,
+    0,
+    moon.x,
+    moon.y,
+    moon.r,
+  );
+  moonFill.addColorStop(0, "rgba(241, 248, 255, 0.92)");
+  moonFill.addColorStop(0.52, "rgba(174, 215, 255, 0.72)");
+  moonFill.addColorStop(1, "rgba(74, 126, 178, 0.38)");
+  ctx.shadowColor = "rgba(126, 204, 255, 0.42)";
+  ctx.shadowBlur = moon.r * 2.8;
+  ctx.fillStyle = moonFill;
+  ctx.beginPath();
+  ctx.arc(moon.x, moon.y, moon.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
   ctx.globalAlpha = 0.34;
   ctx.fillStyle = "rgba(0, 4, 10, 0.78)";
   ctx.beginPath();
@@ -394,7 +431,8 @@ function drawBackground(time, m) {
   ctx.globalAlpha = 0.12;
   ctx.strokeStyle = "#4fe6ff";
   ctx.lineWidth = 1;
-  for (let i = 0; i < 5; i += 1) {
+  const skyLineCount = mobile ? 2 : 5;
+  for (let i = 0; i < skyLineCount; i += 1) {
     const y = height * (0.18 + i * 0.1);
     ctx.beginPath();
     for (let x = 0; x <= width; x += 24) {
@@ -432,6 +470,66 @@ function clipWater(bounds, time = 0) {
   ctx.clip();
 }
 
+function drawMoonReflection(bounds, time, m) {
+  const mobile = width < 760;
+  const centerX = width * (mobile ? 0.68 : 0.66);
+  const rows = mobile ? 22 : 36;
+
+  ctx.save();
+  clipWater(bounds, time);
+  ctx.globalCompositeOperation = "screen";
+
+  const shaft = ctx.createLinearGradient(0, bounds.horizon, 0, bounds.bottom);
+  shaft.addColorStop(0, "rgba(144, 210, 255, 0.055)");
+  shaft.addColorStop(0.35, "rgba(55, 151, 220, 0.024)");
+  shaft.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = shaft;
+  ctx.beginPath();
+  ctx.moveTo(centerX - 4, bounds.horizon);
+  ctx.bezierCurveTo(centerX + 22, bounds.horizon + bounds.depth * 0.24, centerX + 36, bounds.bottom, centerX + 16, bounds.bottom);
+  ctx.bezierCurveTo(centerX - 8, bounds.bottom, centerX - 22, bounds.horizon + bounds.depth * 0.26, centerX + 2, bounds.horizon);
+  ctx.closePath();
+  ctx.fill();
+
+  for (let i = 0; i < rows; i += 1) {
+    const t = i / (rows - 1);
+    const y = bounds.horizon + 8 + bounds.depth * (t ** 1.35) * 0.78;
+    const drift =
+      Math.sin(time * 0.55 + i * 0.72) * (3 + t * 18) +
+      Math.sin(time * 0.18 + i * 1.9) * (1 + t * 7);
+    const center = centerX + drift;
+    const widthBase = (10 + t * (mobile ? 76 : 118)) * (0.72 + Math.sin(i * 1.7) * 0.18);
+    const broken = 0.46 + Math.sin(time * 1.2 + i * 2.1) * 0.18;
+    const alpha = (0.1 + (1 - t) * 0.12 + m.glow * 0.012) * broken;
+
+    ctx.strokeStyle = `rgba(157, 222, 255, ${alpha})`;
+    ctx.lineWidth = Math.max(0.7, 1.6 - t * 0.7);
+    ctx.shadowColor = `rgba(111, 207, 255, ${alpha * 0.8})`;
+    ctx.shadowBlur = mobile ? 2.5 : 5;
+
+    const segments = mobile ? 2 : 3;
+    for (let s = 0; s < segments; s += 1) {
+      const offset = (s - (segments - 1) / 2) * widthBase * 0.42;
+      const jitter = 0.5 + Math.sin(i * 12.989 + s * 78.233) * 0.5;
+      const length = widthBase * (0.18 + jitter * 0.08 + t * 0.08);
+      const x1 = center + offset - length * 0.5;
+      const x2 = center + offset + length * 0.5;
+      const yy = y + Math.sin(x1 * 0.04 + time + i) * (1 + t * 4);
+      ctx.beginPath();
+      ctx.moveTo(clamp(x1, 0, width), yy);
+      ctx.quadraticCurveTo(
+        clamp((x1 + x2) * 0.5, 0, width),
+        yy + Math.sin(time + i) * (1.5 + t * 3),
+        clamp(x2, 0, width),
+        yy + Math.sin(x2 * 0.03 - time) * (1 + t * 2),
+      );
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
 function drawWaterBase(bounds, time, m) {
   ctx.save();
   traceWaterPath(bounds, time);
@@ -447,8 +545,8 @@ function drawWaterBase(bounds, time, m) {
   ctx.save();
   clipWater(bounds, time);
   ctx.globalCompositeOperation = "screen";
-  const lineCount = width < 760 ? 18 : 28;
-  const xStep = width < 760 ? 16 : 11;
+  const lineCount = width < 760 ? 12 : 28;
+  const xStep = width < 760 ? 24 : 11;
   for (let i = 0; i < lineCount; i += 1) {
     const t = i / (lineCount - 1);
     const y = bounds.horizon + 10 + bounds.depth * (t ** 1.58) * 0.9;
@@ -467,22 +565,12 @@ function drawWaterBase(bounds, time, m) {
     ctx.stroke();
   }
 
-  const moonPath = ctx.createLinearGradient(width * 0.52, bounds.horizon, width * 0.5, bounds.bottom);
-  moonPath.addColorStop(0, "rgba(162, 220, 255, 0.18)");
-  moonPath.addColorStop(0.34, "rgba(76, 190, 255, 0.1)");
-  moonPath.addColorStop(1, "rgba(76, 190, 255, 0)");
-  ctx.fillStyle = moonPath;
-  ctx.beginPath();
-  ctx.moveTo(width * 0.47, bounds.horizon);
-  ctx.bezierCurveTo(width * 0.58, bounds.horizon + bounds.depth * 0.18, width * 0.61, bounds.bottom, width * 0.52, bounds.bottom);
-  ctx.bezierCurveTo(width * 0.45, bounds.bottom, width * 0.44, bounds.horizon + bounds.depth * 0.2, width * 0.49, bounds.horizon);
-  ctx.closePath();
-  ctx.fill();
+  drawMoonReflection(bounds, time, m);
   ctx.restore();
 
   const rimAlpha = 0.18 + m.glow * 0.08;
   ctx.shadowColor = "rgba(69, 219, 255, 0.8)";
-  ctx.shadowBlur = 24 + m.glow * 8;
+  ctx.shadowBlur = width < 760 ? 8 : 24 + m.glow * 8;
   ctx.lineWidth = 1.3;
   ctx.strokeStyle = `rgba(107, 232, 255, ${rimAlpha})`;
   traceSurfaceLine(bounds, time);
@@ -601,6 +689,7 @@ function updateTransient(dt) {
 }
 
 function drawParticles(bounds, time, m) {
+  const mobile = width < 760;
   ctx.save();
   clipWater(bounds, time);
   ctx.globalCompositeOperation = "lighter";
@@ -610,7 +699,7 @@ function drawParticles(bounds, time, m) {
     const alpha = clamp(0.13 + m.glow * 0.08 + pulse * 0.22, 0.12, 0.86);
     const radius = p.size * (0.8 + pulse * 0.45);
     ctx.shadowColor = `hsla(${p.hue}, 100%, 66%, ${alpha})`;
-    ctx.shadowBlur = 10 + m.glow * 5;
+    ctx.shadowBlur = mobile ? 4 + m.glow * 1.4 : 10 + m.glow * 5;
     ctx.fillStyle = `hsla(${p.hue}, 100%, 70%, ${alpha})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
@@ -620,7 +709,7 @@ function drawParticles(bounds, time, m) {
   for (const p of burstParticles) {
     const alpha = clamp(p.life / p.maxLife, 0, 1);
     ctx.shadowColor = `hsla(${p.hue}, 100%, 68%, ${alpha})`;
-    ctx.shadowBlur = 16;
+    ctx.shadowBlur = mobile ? 7 : 16;
     ctx.fillStyle = `hsla(${p.hue}, 100%, 72%, ${alpha})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
@@ -931,5 +1020,5 @@ window.addEventListener("resize", resizeCanvas);
 
 resizeCanvas();
 updateUi();
-for (let i = 0; i < 260; i += 1) spawnParticle();
+for (let i = 0; i < (window.innerWidth < 760 ? 120 : 260); i += 1) spawnParticle();
 requestAnimationFrame(frame);
