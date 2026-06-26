@@ -1013,8 +1013,8 @@ function updateAndDrawDiveBubbles(dt, time, lineY) {
 }
 
 function spawnBubbleCluster(time) {
-  // A loose cluster of bubbles rising from just below the bottom edge.
-  const count = 3 + Math.floor(Math.random() * 7);
+  // A small, sparse cluster rising from just below the bottom edge.
+  const count = 1 + Math.floor(Math.random() * 3);
   const cx = Math.random() * width;
   for (let i = 0; i < count; i += 1) {
     bubbles.push({
@@ -1028,13 +1028,14 @@ function spawnBubbleCluster(time) {
       life: 0,
     });
   }
-  // Schedule the next burst after a random, uneven gap so density varies.
-  nextBubbleBurst = time + 0.7 + Math.random() * 3.6;
+  // Schedule the next burst after a random, uneven, and longer gap so the field
+  // stays sparse and the density varies.
+  nextBubbleBurst = time + 1.8 + Math.random() * 4.4;
 }
 
 // Bubbles rising from off the bottom edge to the surface line, where they fade
 // out. Only while underwater (diving / in the Dive Log), not on the surface.
-function updateBubbles(dt, time, lineY) {
+function updateBubbles(dt, time) {
   // Fade the whole bubble field in while diving and out the moment 水面へ is
   // pressed (diveTarget back to 0), so they vanish quietly instead of lingering.
   const target = diveTarget === 1 ? 1 : 0;
@@ -1043,24 +1044,27 @@ function updateBubbles(dt, time, lineY) {
   // Only spawn while actively underwater; on the way back up they just fade.
   if (diveTarget === 1 && time >= nextBubbleBurst) spawnBubbleCluster(time);
 
+  const vanishY = height * 0.42; // disappear a little above centre, not at the line
   for (let i = bubbles.length - 1; i >= 0; i -= 1) {
     const b = bubbles[i];
     b.life += dt;
     b.y -= b.speed * dt;
     b.x += Math.sin(time * b.wobbleRate + b.phase) * b.wobbleAmp * dt;
-    if (b.y <= lineY + 2) bubbles.splice(i, 1);
+    if (b.y <= vanishY) bubbles.splice(i, 1);
   }
 
   if (bubbleFade < 0.01 && diveTarget === 0) bubbles.length = 0;
 }
 
-function drawBubbles(lineY) {
+function drawBubbles() {
   if (bubbleFade < 0.01 || !bubbles.length) return;
+  const vanishY = height * 0.42;
+  const fadeDist = height * 0.24; // long, gradual fade before vanishing
   ctx.save();
 
   for (const b of bubbles) {
     const fadeIn = clamp(b.life / 0.5, 0, 1);
-    const fadeTop = clamp((b.y - lineY) / 64, 0, 1); // fade out near the surface line
+    const fadeTop = clamp((b.y - vanishY) / fadeDist, 0, 1);
     const alpha = (0.16 + 0.16 * fadeTop) * fadeIn * fadeTop * bubbleFade;
     if (alpha <= 0.002) continue;
 
@@ -1123,7 +1127,7 @@ function frame(now) {
 
   adjustParticleCount();
   updateParticles(dt, time, bounds, m);
-  updateBubbles(dt, time, lineY);
+  updateBubbles(dt, time);
   updateTransient(dt);
 
   // Clear in screen space first: while diving the scene is translated up, so the
@@ -1162,7 +1166,7 @@ function frame(now) {
     ctx.restore();
   }
 
-  drawBubbles(lineY);
+  drawBubbles();
   updateAndDrawDiveBubbles(dt, time, lineY);
 
   requestAnimationFrame(frame);
