@@ -52,6 +52,8 @@ let diveProgress = 0;
 let diveTarget = 0;
 let nextBubbleBurst = 0;
 let bubbleFade = 0;
+let diveScrollDepth = 0;
+let diveScrollTarget = 0;
 
 const DIVE_IN_RATE = 1 / 2.4; // seconds to slowly sink through the surface
 const DIVE_OUT_RATE = 1 / 1.5; // seconds to resurface
@@ -378,6 +380,7 @@ function renderDiveLog() {
 function updateDiveScrollDepth() {
   if (!diveView || !diveLogList) return;
   const depth = clamp(diveLogList.scrollTop / 380, 0, 1);
+  diveScrollTarget = depth;
   diveView.style.setProperty("--dive-scroll", depth.toFixed(3));
   diveView.style.setProperty("--dive-dark-opacity", (depth * 0.72).toFixed(3));
   diveView.style.setProperty("--dive-surface-offset", `${(-depth * 122).toFixed(1)}px`);
@@ -1121,9 +1124,15 @@ function frame(now) {
 
   const m = metrics();
   const bounds = waterBounds();
+  diveScrollDepth += (diveScrollTarget - diveScrollDepth) * Math.min(1, dt * 6);
+
   const ease = diveProgress * diveProgress * (3 - 2 * diveProgress);
+  // As you scroll deeper into the log, lift the kept surface further up and off
+  // the top — the surface recedes above you the deeper you go.
+  const scrollLift = diveScrollDepth * height * 0.18;
+  const sceneLift = (bounds.horizon - DIVE_LINE_TOP) * ease + scrollLift;
   // Screen height the kept surface line has risen to as we sink past it.
-  const lineY = bounds.horizon - (bounds.horizon - DIVE_LINE_TOP) * ease;
+  const lineY = bounds.horizon - sceneLift;
 
   adjustParticleCount();
   updateParticles(dt, time, bounds, m);
@@ -1140,8 +1149,9 @@ function frame(now) {
   ctx.save();
   if (diveProgress > 0.001) {
     // Sink: the whole night sea lifts as the camera descends, carrying the
-    // glowing horizon up the screen until it becomes the water's cross-section.
-    ctx.translate(0, -(bounds.horizon - DIVE_LINE_TOP) * ease);
+    // glowing horizon up the screen until it becomes the water's cross-section,
+    // and further up still as you scroll deeper into the log.
+    ctx.translate(0, -sceneLift);
   }
 
   drawBackground(time, m);
@@ -1295,6 +1305,7 @@ function closeDiveView() {
   appShell?.classList.add("is-dive-returning");
   openDiveButton?.setAttribute("aria-expanded", "false");
   diveTarget = 0;
+  diveScrollTarget = 0; // let the lifted surface ease back as we resurface
 }
 
 function effortSourcePoint() {

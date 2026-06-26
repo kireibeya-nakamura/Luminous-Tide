@@ -1,3 +1,15 @@
+# 潜る演出のリニューアル (dive-flow-27)
+
+## 27 の変更（深くスクロールすると水面が上へ抜けて消える）
+
+- Dive Log を下にスクロール（＝さらに深く潜る）すると、**水面ラインが上へ抜けて画面外に消える**ように。潜っているのに水面が見え続ける違和感を解消。
+- 仕組み: スクロール量 `diveScrollDepth`（`updateDiveScrollDepth` で取得、フレームで補間）を Canvas のカメラ送り量に加算（`scrollLift = diveScrollDepth × height × 0.18`）。`sceneLift = 潜降分 + scrollLift` で水面ライン（とdeepening開始位置 `lineY`）を上へ。
+- スクロールを上に戻すと水面が降りてきて再び見える（対称）。「水面へ」を押すと `diveScrollTarget=0` で持ち上がりも自然に戻る。
+
+以下は dive-flow-26 の内容。
+
+---
+
 # 潜る演出のリニューアル (dive-flow-26)
 
 ## 26 の変更（泡の量・消える位置・フェード長を調整）
