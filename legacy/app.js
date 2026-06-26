@@ -39,6 +39,7 @@ const dissolveMotes = [];
 const ripples = [];
 const trails = [];
 const diveBubbles = [];
+const bubbles = [];
 
 let width = 0;
 let height = 0;
@@ -49,6 +50,7 @@ let flowX = 0;
 let flowY = 0;
 let diveProgress = 0;
 let diveTarget = 0;
+let nextBubbleBurst = 0;
 
 const DIVE_IN_RATE = 1 / 2.4; // seconds to slowly sink through the surface
 const DIVE_OUT_RATE = 1 / 1.5; // seconds to resurface
@@ -968,13 +970,14 @@ function ensureDiveBubbles() {
   }
 }
 
-// Marine snow streaming upward past the camera — the strongest cue that the
-// viewpoint itself is sinking. Only active while diving.
-function updateAndDrawDiveBubbles(dt, time) {
-  if (diveProgress < 0.02) return;
+// Marine snow streaming upward past the camera — the cue that the viewpoint is
+// sinking. Active ONLY during the dive animation (the sin() flare), and it never
+// rises above the surface line: it fades out and recycles as it nears it.
+function updateAndDrawDiveBubbles(dt, time, lineY) {
+  const flare = Math.sin(clamp(diveProgress, 0, 1) * Math.PI);
+  if (flare < 0.02) return;
   ensureDiveBubbles();
 
-  const fade = clamp(diveProgress * 1.3, 0, 1);
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   ctx.lineCap = "round";
@@ -982,14 +985,15 @@ function updateAndDrawDiveBubbles(dt, time) {
   for (const b of diveBubbles) {
     b.y -= b.speed * dt * (0.6 + diveProgress * 1.4);
     b.x += Math.sin(time * 0.8 + b.phase) * b.drift * dt;
-    if (b.y < -12) {
+    if (b.y < lineY - 4) {
       b.y = height + 12;
       b.x = Math.random() * width;
     }
 
     const streak = b.speed * 0.06 * (0.6 + diveProgress);
     const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(time * 1.5 + b.phase));
-    const alpha = fade * twinkle;
+    const surfFade = clamp((b.y - lineY) / 80, 0, 1);
+    const alpha = flare * twinkle * surfFade;
 
     ctx.strokeStyle = `hsla(${b.hue}, 100%, 72%, ${alpha * 0.45})`;
     ctx.lineWidth = b.r * 0.7;
@@ -1001,6 +1005,67 @@ function updateAndDrawDiveBubbles(dt, time) {
     ctx.fillStyle = `hsla(${b.hue}, 100%, 76%, ${alpha})`;
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function spawnBubbleCluster(time, bounds) {
+  // A loose cluster of bubbles rising from one random spot on the seabed.
+  const count = 3 + Math.floor(Math.random() * 7);
+  const cx = Math.random() * width;
+  for (let i = 0; i < count; i += 1) {
+    bubbles.push({
+      x: cx + (Math.random() - 0.5) * 64,
+      y: bounds.bottom - Math.random() * 36,
+      r: 0.8 + Math.random() * 2.6,
+      speed: 22 + Math.random() * 44,
+      wobbleAmp: 4 + Math.random() * 10,
+      wobbleRate: 1 + Math.random() * 1.8,
+      phase: Math.random() * Math.PI * 2,
+      life: 0,
+    });
+  }
+  // Schedule the next burst after a random, uneven gap so density varies.
+  nextBubbleBurst = time + 0.7 + Math.random() * 3.6;
+}
+
+// Always-on ambient bubbles rising from the seabed to the surface, where they
+// fade out (they never cross above the water line).
+function updateBubbles(dt, time, bounds) {
+  if (time >= nextBubbleBurst) spawnBubbleCluster(time, bounds);
+
+  for (let i = bubbles.length - 1; i >= 0; i -= 1) {
+    const b = bubbles[i];
+    b.life += dt;
+    b.y -= b.speed * dt;
+    b.x += Math.sin(time * b.wobbleRate + b.phase) * b.wobbleAmp * dt;
+    if (b.y <= surfaceY(b.x, bounds, time) + 2) bubbles.splice(i, 1);
+  }
+}
+
+function drawBubbles(bounds, time) {
+  if (!bubbles.length) return;
+  ctx.save();
+  clipWater(bounds, time);
+
+  for (const b of bubbles) {
+    const surface = surfaceY(b.x, bounds, time);
+    const fadeIn = clamp(b.life / 0.5, 0, 1);
+    const fadeTop = clamp((b.y - surface) / 40, 0, 1); // fade out near the surface
+    const alpha = (0.16 + 0.2 * fadeTop) * fadeIn * fadeTop;
+    if (alpha <= 0.002) continue;
+
+    ctx.strokeStyle = `rgba(176, 226, 255, ${alpha})`;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(214, 240, 255, ${alpha * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.34, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -1045,6 +1110,7 @@ function frame(now) {
   const bounds = waterBounds();
   adjustParticleCount();
   updateParticles(dt, time, bounds, m);
+  updateBubbles(dt, time, bounds);
   updateTransient(dt);
 
   const ease = diveProgress * diveProgress * (3 - 2 * diveProgress);
@@ -1069,6 +1135,7 @@ function frame(now) {
   drawWaterBase(bounds, time, m);
   drawRipples(bounds, time);
   drawParticles(bounds, time, m);
+  drawBubbles(bounds, time);
   drawDepthShade(bounds, time);
   drawDissolveMotes(time);
   ctx.restore();
@@ -1087,7 +1154,7 @@ function frame(now) {
     ctx.restore();
   }
 
-  updateAndDrawDiveBubbles(dt, time);
+  updateAndDrawDiveBubbles(dt, time, lineY);
 
   requestAnimationFrame(frame);
 }
