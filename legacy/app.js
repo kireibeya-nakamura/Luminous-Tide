@@ -188,7 +188,9 @@ function waterBounds() {
     rx: width * 0.48,
     ry: depth * 0.44,
     depth,
-    surfaceAmp: (mobile ? 4.2 : 6.4) * (1 - diveProgress * 0.92),
+    surfaceAmp:
+      (mobile ? 4.2 : 6.4) *
+      (1 - Math.sin(clamp(diveProgress, 0, 1) * Math.PI) * 0.92),
   };
 }
 
@@ -659,7 +661,7 @@ function drawWaterBase(bounds, time, m) {
   drawMoonReflection(bounds, time, m);
   ctx.restore();
 
-  const diveBoost = 1 + diveProgress * 3.4;
+  const diveBoost = 1 + Math.sin(clamp(diveProgress, 0, 1) * Math.PI) * 3.4;
   const rimAlpha = clamp((0.18 + m.glow * 0.08) * diveBoost, 0, 1);
   ctx.shadowColor = "rgba(120, 235, 255, 0.85)";
   ctx.shadowBlur = (width < 760 ? 8 : 24 + m.glow * 8) * (1 + diveProgress * 1.8);
@@ -721,11 +723,13 @@ function updateParticles(dt, time, bounds, m) {
     p.x += p.vx * dt * 60;
     p.y += p.vy * dt * 60;
 
-    // While diving, draw every mote toward the glowing surface line so the
-    // plankton visibly gather into a single bright horizon.
-    if (diveProgress > 0.001) {
+    // Mid-dive, draw every mote toward the glowing surface line so the plankton
+    // gather into a single bright horizon — then release as the log settles, so
+    // the resting underwater scene looks like the normal night sea.
+    const diveFlare = Math.sin(clamp(diveProgress, 0, 1) * Math.PI);
+    if (diveFlare > 0.001) {
       const lineY = surfaceY(p.x, bounds, time);
-      const pull = diveProgress * diveProgress;
+      const pull = diveFlare * diveFlare;
       p.y += (lineY - p.y) * Math.min(0.9, pull * 0.16 * dt * 60);
       p.vx *= 1 - 0.6 * pull;
       p.vy *= 1 - 0.6 * pull;
@@ -735,7 +739,7 @@ function updateParticles(dt, time, bounds, m) {
     if (p.x > width) p.x = 0;
 
     const top = surfaceY(p.x, bounds, time) + 10;
-    if (diveProgress < 0.35 && p.y < top) {
+    if (diveFlare < 0.4 && p.y < top) {
       p.y = top + 8 + Math.random() * 22;
       p.vy = Math.abs(p.vy) * 0.42;
     }

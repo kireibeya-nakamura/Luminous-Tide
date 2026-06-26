@@ -294,9 +294,18 @@ button {
   z-index: 5;
   inset: 0;
   overflow: hidden;
+  /* Transparent at the very top so the real canvas horizon line (kept by the
+     dive) shows straight through — the same line, not a copy. Darkens below for
+     the log content. */
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(111, 194, 255, 0.16), transparent 30%),
-    linear-gradient(180deg, rgba(6, 25, 43, 0.98) 0%, rgba(2, 9, 19, 0.99) 48%, #01040a 100%);
+    linear-gradient(
+      180deg,
+      rgba(2, 10, 20, 0) 0,
+      rgba(2, 10, 20, 0) 78px,
+      rgba(3, 16, 30, 0.62) 168px,
+      rgba(2, 9, 19, 0.97) 46%,
+      #01040a 100%
+    );
   color: var(--text);
   opacity: 0;
   pointer-events: none;
@@ -338,57 +347,8 @@ button {
   transition: opacity 120ms linear;
 }
 
-.dive-surface {
-  position: absolute;
-  top: calc(0px + var(--dive-surface-offset));
-  left: -12%;
-  width: 124%;
-  height: 116px;
-  background:
-    radial-gradient(ellipse at 50% 42%, rgba(185, 232, 255, 0.16), transparent 44%),
-    linear-gradient(180deg, rgba(91, 173, 225, 0.12), rgba(3, 13, 24, 0) 72%);
-  border-bottom: 0;
-  filter: blur(0.2px);
-  opacity: var(--dive-surface-opacity);
-  transform-origin: 50% 0;
-  animation: dive-surface 7s ease-in-out infinite;
-}
-
-/* Same design as the canvas horizon line (traceSurfaceLine): a cyan core that
-   tints to violet just right of centre, with a soft cyan bloom. */
-.dive-surface::before {
-  position: absolute;
-  top: 42px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    rgba(80, 113, 180, 0) 0%,
-    rgba(88, 240, 255, 0.62) 44%,
-    rgba(147, 113, 255, 0.34) 55%,
-    rgba(80, 113, 180, 0) 100%
-  );
-  border-radius: 999px;
-  box-shadow:
-    0 0 8px rgba(150, 240, 255, 0.62),
-    0 0 22px rgba(120, 235, 255, 0.42),
-    0 8px 28px rgba(36, 130, 204, 0.16);
-  content: "";
-  animation: surface-horizon-breathe 6.2s ease-in-out infinite;
-}
-
-.dive-surface::after {
-  position: absolute;
-  top: 44px;
-  left: 0;
-  width: 100%;
-  height: 58px;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(115, 214, 255, 0.11), transparent 56%),
-    linear-gradient(180deg, rgba(67, 163, 221, 0.14), rgba(4, 14, 25, 0));
-  content: "";
-}
+/* The Dive Log's surface line is no longer drawn here — the real canvas horizon
+   line shows straight through the transparent top of .dive-view instead. */
 
 .dive-light {
   position: absolute;
@@ -577,35 +537,6 @@ button {
 
 .dive-empty.is-hidden {
   display: none;
-}
-
-@keyframes dive-surface {
-  0%,
-  100% {
-    transform: translateY(0) scaleY(1);
-  }
-
-  50% {
-    transform: translateY(4px) scaleY(0.96);
-  }
-}
-
-@keyframes surface-horizon-breathe {
-  0%,
-  100% {
-    transform: translateY(0) scaleX(1);
-    filter: brightness(1);
-  }
-
-  35% {
-    transform: translateY(-1px) scaleX(1.012);
-    filter: brightness(1.12);
-  }
-
-  68% {
-    transform: translateY(1.5px) scaleX(0.992);
-    filter: brightness(0.92);
-  }
 }
 
 @keyframes dive-particles {

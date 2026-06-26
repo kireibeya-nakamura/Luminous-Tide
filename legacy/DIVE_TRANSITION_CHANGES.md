@@ -1,3 +1,16 @@
+# 潜る演出のリニューアル (dive-flow-22)
+
+## 22 の変更（Canvasの水平線をDive Logにそのまま残す）
+
+- Dive Log上部のCSS製ニセ水面ライン（`.dive-surface` 一式）と `index.html` の `<div class="dive-surface">` を**削除**。
+- `.dive-view` の背景を**上部だけ透明**（0〜78pxは透明 → 下へ向かって暗転）にし、**Canvasが描いている本物の水平線（潜降で上部にキープ済み）をそのまま透過表示**。＝似たものを作るのではなく、同じ線を残す。
+- 線の発光・波の平坦化・粒子の集約を **`diveProgress` 単調 → 山なりのフレア（`sin(diveProgress*π)`）** に変更。潜降アニメ中だけ発光・集約が起き、Dive Logで落ち着くと**水面画面と同じ明るさ・波**に戻る（＝そのまま）。線の位置（上端キープ）と下方の暗転は従来通り `diveProgress` 連動で維持。
+- 未使用になった `@keyframes dive-surface` / `surface-horizon-breathe` を削除。
+
+以下は dive-flow-21 の内容。
+
+---
+
 # 潜る演出のリニューアル (dive-flow-21)
 
 ## 21 の変更（Dive Log上部の水面ラインを水平線と同デザインに）
