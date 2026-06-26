@@ -1011,17 +1011,17 @@ function updateAndDrawDiveBubbles(dt, time, lineY) {
   ctx.restore();
 }
 
-function spawnBubbleCluster(time, bounds) {
-  // A loose cluster of bubbles rising from one random spot on the seabed.
+function spawnBubbleCluster(time) {
+  // A loose cluster of bubbles rising from just below the bottom edge.
   const count = 3 + Math.floor(Math.random() * 7);
   const cx = Math.random() * width;
   for (let i = 0; i < count; i += 1) {
     bubbles.push({
-      x: cx + (Math.random() - 0.5) * 64,
-      y: bounds.bottom - Math.random() * 36,
-      r: 0.8 + Math.random() * 2.6,
-      speed: 22 + Math.random() * 44,
-      wobbleAmp: 4 + Math.random() * 10,
+      x: cx + (Math.random() - 0.5) * 72,
+      y: height + 12 + Math.random() * 48,
+      r: 2 + Math.random() * 5, // bigger, widely random
+      speed: 24 + Math.random() * 52,
+      wobbleAmp: 4 + Math.random() * 12,
       wobbleRate: 1 + Math.random() * 1.8,
       phase: Math.random() * Math.PI * 2,
       life: 0,
@@ -1031,39 +1031,41 @@ function spawnBubbleCluster(time, bounds) {
   nextBubbleBurst = time + 0.7 + Math.random() * 3.6;
 }
 
-// Always-on ambient bubbles rising from the seabed to the surface, where they
-// fade out (they never cross above the water line).
-function updateBubbles(dt, time, bounds) {
-  if (time >= nextBubbleBurst) spawnBubbleCluster(time, bounds);
+// Bubbles rising from off the bottom edge to the surface line, where they fade
+// out. Only while underwater (diving / in the Dive Log), not on the surface.
+function updateBubbles(dt, time, lineY) {
+  if (diveProgress < 0.01) {
+    bubbles.length = 0;
+    return;
+  }
+  if (time >= nextBubbleBurst) spawnBubbleCluster(time);
 
   for (let i = bubbles.length - 1; i >= 0; i -= 1) {
     const b = bubbles[i];
     b.life += dt;
     b.y -= b.speed * dt;
     b.x += Math.sin(time * b.wobbleRate + b.phase) * b.wobbleAmp * dt;
-    if (b.y <= surfaceY(b.x, bounds, time) + 2) bubbles.splice(i, 1);
+    if (b.y <= lineY + 2) bubbles.splice(i, 1);
   }
 }
 
-function drawBubbles(bounds, time) {
-  if (!bubbles.length) return;
+function drawBubbles(lineY) {
+  if (diveProgress < 0.01 || !bubbles.length) return;
   ctx.save();
-  clipWater(bounds, time);
 
   for (const b of bubbles) {
-    const surface = surfaceY(b.x, bounds, time);
     const fadeIn = clamp(b.life / 0.5, 0, 1);
-    const fadeTop = clamp((b.y - surface) / 40, 0, 1); // fade out near the surface
-    const alpha = (0.16 + 0.2 * fadeTop) * fadeIn * fadeTop;
+    const fadeTop = clamp((b.y - lineY) / 64, 0, 1); // fade out near the surface line
+    const alpha = (0.2 + 0.24 * fadeTop) * fadeIn * fadeTop;
     if (alpha <= 0.002) continue;
 
     ctx.strokeStyle = `rgba(176, 226, 255, ${alpha})`;
-    ctx.lineWidth = 0.8;
+    ctx.lineWidth = Math.max(0.7, b.r * 0.3);
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.fillStyle = `rgba(214, 240, 255, ${alpha * 0.5})`;
+    ctx.fillStyle = `rgba(214, 240, 255, ${alpha * 0.42})`;
     ctx.beginPath();
     ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.34, 0, Math.PI * 2);
     ctx.fill();
@@ -1108,14 +1110,14 @@ function frame(now) {
 
   const m = metrics();
   const bounds = waterBounds();
-  adjustParticleCount();
-  updateParticles(dt, time, bounds, m);
-  updateBubbles(dt, time, bounds);
-  updateTransient(dt);
-
   const ease = diveProgress * diveProgress * (3 - 2 * diveProgress);
   // Screen height the kept surface line has risen to as we sink past it.
   const lineY = bounds.horizon - (bounds.horizon - DIVE_LINE_TOP) * ease;
+
+  adjustParticleCount();
+  updateParticles(dt, time, bounds, m);
+  updateBubbles(dt, time, lineY);
+  updateTransient(dt);
 
   // Clear in screen space first: while diving the scene is translated up, so the
   // background fill no longer covers the bottom strip — this prevents ghosting.
@@ -1135,7 +1137,6 @@ function frame(now) {
   drawWaterBase(bounds, time, m);
   drawRipples(bounds, time);
   drawParticles(bounds, time, m);
-  drawBubbles(bounds, time);
   drawDepthShade(bounds, time);
   drawDissolveMotes(time);
   ctx.restore();
@@ -1154,6 +1155,7 @@ function frame(now) {
     ctx.restore();
   }
 
+  drawBubbles(lineY);
   updateAndDrawDiveBubbles(dt, time, lineY);
 
   requestAnimationFrame(frame);

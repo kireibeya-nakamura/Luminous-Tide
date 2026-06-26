@@ -294,17 +294,16 @@ button {
   z-index: 5;
   inset: 0;
   overflow: hidden;
-  /* Transparent at the very top so the real canvas horizon line (kept by the
-     dive) shows straight through — the same line, not a copy. Darkens below for
-     the log content. */
+  /* Transparent at the top so the real canvas horizon line (kept by the dive)
+     shows straight through, and only a light veil below so the canvas's rising
+     bubbles and deep water remain visible through the log. */
   background:
     linear-gradient(
       180deg,
       rgba(2, 10, 20, 0) 0,
-      rgba(2, 10, 20, 0) 78px,
-      rgba(3, 16, 30, 0.62) 168px,
-      rgba(2, 9, 19, 0.97) 46%,
-      #01040a 100%
+      rgba(2, 10, 20, 0) 70px,
+      rgba(1, 6, 14, 0.16) 42%,
+      rgba(1, 4, 10, 0.32) 100%
     );
   color: var(--text);
   opacity: 0;
