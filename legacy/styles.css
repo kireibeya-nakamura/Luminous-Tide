@@ -354,6 +354,8 @@ button {
   animation: dive-surface 7s ease-in-out infinite;
 }
 
+/* Same design as the canvas horizon line (traceSurfaceLine): a cyan core that
+   tints to violet just right of centre, with a soft cyan bloom. */
 .dive-surface::before {
   position: absolute;
   top: 42px;
@@ -362,15 +364,16 @@ button {
   height: 2px;
   background: linear-gradient(
     90deg,
-    rgba(72, 146, 206, 0.02),
-    rgba(122, 226, 255, 0.54) 43%,
-    rgba(170, 145, 255, 0.16) 63%,
-    rgba(72, 146, 206, 0.02)
+    rgba(80, 113, 180, 0) 0%,
+    rgba(88, 240, 255, 0.62) 44%,
+    rgba(147, 113, 255, 0.34) 55%,
+    rgba(80, 113, 180, 0) 100%
   );
   border-radius: 999px;
   box-shadow:
-    0 0 18px rgba(88, 220, 255, 0.2),
-    0 7px 24px rgba(36, 130, 204, 0.14);
+    0 0 8px rgba(150, 240, 255, 0.62),
+    0 0 22px rgba(120, 235, 255, 0.42),
+    0 8px 28px rgba(36, 130, 204, 0.16);
   content: "";
   animation: surface-horizon-breathe 6.2s ease-in-out infinite;
 }
