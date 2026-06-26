@@ -51,6 +51,7 @@ let flowY = 0;
 let diveProgress = 0;
 let diveTarget = 0;
 let nextBubbleBurst = 0;
+let bubbleFade = 0;
 
 const DIVE_IN_RATE = 1 / 2.4; // seconds to slowly sink through the surface
 const DIVE_OUT_RATE = 1 / 1.5; // seconds to resurface
@@ -1021,8 +1022,8 @@ function spawnBubbleCluster(time) {
       y: height + 12 + Math.random() * 48,
       r: 2 + Math.random() * 5, // bigger, widely random
       speed: 24 + Math.random() * 52,
-      wobbleAmp: 4 + Math.random() * 12,
-      wobbleRate: 1 + Math.random() * 1.8,
+      wobbleAmp: 1.5 + Math.random() * 2.5, // gentle waver — mostly straight up
+      wobbleRate: 0.5 + Math.random() * 0.9,
       phase: Math.random() * Math.PI * 2,
       life: 0,
     });
@@ -1034,11 +1035,13 @@ function spawnBubbleCluster(time) {
 // Bubbles rising from off the bottom edge to the surface line, where they fade
 // out. Only while underwater (diving / in the Dive Log), not on the surface.
 function updateBubbles(dt, time, lineY) {
-  if (diveProgress < 0.01) {
-    bubbles.length = 0;
-    return;
-  }
-  if (time >= nextBubbleBurst) spawnBubbleCluster(time);
+  // Fade the whole bubble field in while diving and out the moment 水面へ is
+  // pressed (diveTarget back to 0), so they vanish quietly instead of lingering.
+  const target = diveTarget === 1 ? 1 : 0;
+  bubbleFade += (target - bubbleFade) * Math.min(1, dt * 2.4);
+
+  // Only spawn while actively underwater; on the way back up they just fade.
+  if (diveTarget === 1 && time >= nextBubbleBurst) spawnBubbleCluster(time);
 
   for (let i = bubbles.length - 1; i >= 0; i -= 1) {
     const b = bubbles[i];
@@ -1047,25 +1050,29 @@ function updateBubbles(dt, time, lineY) {
     b.x += Math.sin(time * b.wobbleRate + b.phase) * b.wobbleAmp * dt;
     if (b.y <= lineY + 2) bubbles.splice(i, 1);
   }
+
+  if (bubbleFade < 0.01 && diveTarget === 0) bubbles.length = 0;
 }
 
 function drawBubbles(lineY) {
-  if (diveProgress < 0.01 || !bubbles.length) return;
+  if (bubbleFade < 0.01 || !bubbles.length) return;
   ctx.save();
 
   for (const b of bubbles) {
     const fadeIn = clamp(b.life / 0.5, 0, 1);
     const fadeTop = clamp((b.y - lineY) / 64, 0, 1); // fade out near the surface line
-    const alpha = (0.2 + 0.24 * fadeTop) * fadeIn * fadeTop;
+    const alpha = (0.16 + 0.16 * fadeTop) * fadeIn * fadeTop * bubbleFade;
     if (alpha <= 0.002) continue;
 
-    ctx.strokeStyle = `rgba(176, 226, 255, ${alpha})`;
+    // Muted blue, close to the deep water, so they read as bubbles rather than
+    // bright white dots.
+    ctx.strokeStyle = `rgba(116, 164, 202, ${alpha})`;
     ctx.lineWidth = Math.max(0.7, b.r * 0.3);
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.fillStyle = `rgba(214, 240, 255, ${alpha * 0.42})`;
+    ctx.fillStyle = `rgba(150, 192, 222, ${alpha * 0.3})`;
     ctx.beginPath();
     ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.34, 0, Math.PI * 2);
     ctx.fill();
