@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#020409" />
+    <title>Luminous Tide</title>
+    <link rel="stylesheet" href="styles.css?v=1" />
+  </head>
+  <body>
+    <main class="app" id="app">
+      <!-- 世界はすべてこのCanvasの中（空・月・海・夜光虫・水面断面・光芒） -->
+      <canvas id="sea" aria-label="夜の海。記録した努力が夜光虫の光として海に蓄積される"></canvas>
+
+      <!-- 上部クローム：細いメニューと目（参照画像の2つだけ） -->
+      <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="記録の合計を見る" aria-expanded="false">
+        <span></span><span></span>
+      </button>
+      <button class="icon-btn eye-btn" id="eyeBtn" type="button" aria-label="UIを隠す" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 12c2.7-3.9 5.7-5.8 9-5.8s6.3 1.9 9 5.8c-2.7 3.9-5.7 5.8-9 5.8S5.7 15.9 3 12z" />
+          <circle cx="12" cy="12" r="2.5" />
+          <line x1="5.6" y1="18.8" x2="18.4" y2="5.2" />
+        </svg>
+      </button>
+
+      <!-- ☰で開く小さな合計パネル -->
+      <div class="stat-sheet" id="statSheet" aria-hidden="true">
+        <p><span id="statTotal">0m</span><small>合計</small></p>
+        <p><span id="statDays">0</span><small>日</small></p>
+        <button id="clearBtn" type="button">記録を消す</button>
+      </div>
+
+      <!-- 水面のUI -->
+      <button class="add-btn" id="addBtn" type="button">記録を足す</button>
+      <button class="dive-btn" id="diveBtn" type="button">沈む</button>
+      <div class="chips" id="chips" aria-hidden="true"></div>
+
+      <!-- 水中：沈んだ記憶の流れ（スクロールはカメラ深度に直結） -->
+      <section class="stream" id="stream" aria-label="沈んだ記録" aria-hidden="true">
+        <ol id="logList"></ol>
+        <p class="stream-empty is-hidden" id="streamEmpty">まだ記録は沈んでいません。</p>
+      </section>
+      <button class="rise-btn" id="riseBtn" type="button">水面へ</button>
+      <div class="deep-hint" id="deepHint" aria-hidden="true"></div>
+
+      <!-- 記録モーダル -->
+      <div class="veil" id="veil"></div>
+      <form class="record-modal" id="recordModal" aria-hidden="true">
+        <p class="modal-title">今日の努力を海へ</p>
+        <input
+          id="titleInput"
+          name="title"
+          type="text"
+          maxlength="24"
+          placeholder="何をした？（例: 水の表現を調べた）"
+          autocomplete="off"
+        />
+        <div class="minutes-row">
+          <button type="button" data-min="10">10m</button>
+          <button type="button" data-min="20">20m</button>
+          <button type="button" data-min="30">30m</button>
+          <button type="button" data-min="60">1h</button>
+        </div>
+        <div class="minutes-custom">
+          <input id="minInput" name="minutes" type="number" min="5" max="720" step="5" value="30" />
+          <span>分</span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelBtn">やめる</button>
+          <button type="submit" id="submitBtn">沈める</button>
+        </div>
+      </form>
+    </main>
+
+    <script src="app.js?v=1"></script>
+  </body>
+</html>

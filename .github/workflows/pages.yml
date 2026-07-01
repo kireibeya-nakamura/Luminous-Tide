@@ -41,6 +41,9 @@ jobs:
       - name: Copy legacy static prototype
         run: cp -R legacy react-tide-prototype/dist/legacy
 
+      - name: Copy v2 static prototype
+        run: cp -R v2 react-tide-prototype/dist/v2
+
       - name: Publish dist to gh-pages branch
         run: |
           cd react-tide-prototype/dist
