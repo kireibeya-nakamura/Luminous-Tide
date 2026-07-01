@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Luminous Tide Prototype</title>
+    <link rel="stylesheet" href="styles.css?v=dive-flow-29" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <div id="gestureLayer" class="gesture-layer" aria-hidden="true"></div>
+      <canvas id="tideCanvas" aria-label="努力の蓄積で育つ発光する水面"></canvas>
+      <div id="recordScrim" class="record-scrim" aria-hidden="true"></div>
+      <button
+        class="record-fab"
+        id="openRecordButton"
+        type="button"
+        aria-controls="recordPanel"
+        aria-expanded="false"
+      >
+        記録を足す
+      </button>
+      <button
+        class="dive-fab"
+        id="openDiveButton"
+        type="button"
+        aria-controls="diveView"
+        aria-expanded="false"
+      >
+        潜る
+      </button>
+      <div class="dive-transition" aria-hidden="true"></div>
+      <div id="surfaceChips" class="surface-chips is-hidden" aria-hidden="true"></div>
+
+      <button
+        class="top-icon top-menu"
+        id="menuButton"
+        type="button"
+        aria-label="記録の状態を表示"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+      </button>
+      <button
+        class="top-icon top-eye"
+        id="uiToggleButton"
+        type="button"
+        aria-label="UIを隠す"
+        aria-pressed="false"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 12c2.6-4 5.6-6 9-6s6.4 2 9 6c-2.6 4-5.6 6-9 6s-6.4-2-9-6z" />
+          <circle cx="12" cy="12" r="2.6" />
+          <line x1="5.5" y1="19" x2="18.5" y2="5" />
+        </svg>
+      </button>
+
+      <section class="panel intro-panel" aria-label="現在の努力の状態">
+        <p class="eyebrow">Luminous Tide</p>
+        <p class="lead">
+          今日の努力を記録すると、水位と光が少しずつ育ちます。
+        </p>
+
+        <div class="stats-grid">
+          <div>
+            <span class="stat-value" id="streakDays">0</span>
+            <span class="stat-label">Day</span>
+          </div>
+          <div>
+            <span class="stat-value" id="todayTime">0m</span>
+            <span class="stat-label">Today</span>
+          </div>
+          <div>
+            <span class="stat-value" id="totalTime">0m</span>
+            <span class="stat-label">Total</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel record-panel" id="recordPanel" aria-label="努力を記録する">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Today's record</p>
+            <h2>努力を足す</h2>
+          </div>
+          <div class="panel-actions">
+            <button class="ghost-button" id="tiltButton" type="button">傾きON</button>
+            <button class="text-button" id="closeRecordButton" type="button">閉じる</button>
+          </div>
+        </div>
+
+        <form id="effortForm">
+          <fieldset class="category-group">
+            <legend>カテゴリ</legend>
+            <label>
+              <input type="radio" name="category" value="portfolio" checked />
+              <span>制作</span>
+            </label>
+            <label>
+              <input type="radio" name="category" value="study" />
+              <span>勉強</span>
+            </label>
+            <label>
+              <input type="radio" name="category" value="drawing" />
+              <span>デッサン</span>
+            </label>
+            <label>
+              <input type="radio" name="category" value="career" />
+              <span>転職準備</span>
+            </label>
+          </fieldset>
+
+          <div class="duration-row">
+            <label for="minutesInput">時間</label>
+            <div class="duration-control">
+              <input id="minutesInput" name="minutes" type="number" min="5" max="720" step="5" value="30" />
+              <span>分</span>
+            </div>
+          </div>
+
+          <div class="preset-row" aria-label="時間プリセット">
+            <button type="button" data-minutes="20">20m</button>
+            <button type="button" data-minutes="30">30m</button>
+            <button type="button" data-minutes="60">1h</button>
+            <button type="button" data-minutes="120">2h</button>
+          </div>
+
+          <button class="primary-button" type="submit">記録する</button>
+        </form>
+
+        <div class="log-block">
+          <div class="log-header">
+            <h3>今日の記録</h3>
+            <button class="text-button" id="resetButton" type="button">リセット</button>
+          </div>
+          <ol id="logList" class="log-list"></ol>
+        </div>
+      </section>
+
+      <section class="dive-view" id="diveView" aria-label="記録の深度を見る" aria-hidden="true">
+        <div class="dive-light" aria-hidden="true"></div>
+        <header class="dive-header">
+          <button class="dive-close" id="closeDiveButton" type="button">水面へ</button>
+          <div>
+            <p class="eyebrow">Dive log</p>
+            <h2>潜る</h2>
+          </div>
+        </header>
+
+        <div class="dive-log-wrap">
+          <ol id="diveLogList" class="dive-log-list"></ol>
+          <p id="diveEmpty" class="dive-empty">まだ沈める記録がありません。</p>
+        </div>
+        <div id="diveMore" class="dive-more is-hidden" aria-hidden="true"></div>
+      </section>
+
+    </main>
+
+    <script src="app.js?v=dive-flow-29"></script>
+  </body>
+</html>

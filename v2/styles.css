@@ -1,0 +1,586 @@
+/* Luminous Tide v2 — 夜の海に努力を沈める。
+   主役はCanvasの海。DOMは細い線のUIとログピルだけ。 */
+
+:root {
+  color-scheme: dark;
+  --ink: #eaf5ff;
+  --dim: rgba(190, 214, 232, 0.55);
+  --cyan: #6fe6ff;
+  --violet: #9a86ff;
+  --hairline: rgba(170, 224, 250, 0.16);
+  --glass: rgba(6, 16, 28, 0.42);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #020409;
+  color: var(--ink);
+  font-family:
+    "Hiragino Kaku Gothic ProN", "Yu Gothic", Inter, Meiryo, system-ui,
+    sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.app {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+}
+
+#sea {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  background: #020409;
+}
+
+/* ---- 上部クローム（☰と目だけ） ---------------------------------- */
+
+.icon-btn {
+  position: fixed;
+  z-index: 6;
+  top: calc(14px + env(safe-area-inset-top));
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: rgba(212, 234, 248, 0.48);
+  transition: opacity 700ms ease, color 200ms ease;
+}
+
+.icon-btn:focus-visible {
+  outline: 1px solid var(--hairline);
+  outline-offset: -6px;
+  border-radius: 50%;
+}
+
+.menu-btn {
+  left: calc(10px + env(safe-area-inset-left));
+}
+
+.menu-btn span {
+  display: block;
+  width: 16px;
+  height: 1px;
+  background: currentColor;
+}
+
+.menu-btn span + span {
+  margin-top: 6px;
+}
+
+.eye-btn {
+  right: calc(10px + env(safe-area-inset-right));
+}
+
+.eye-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.stat-sheet {
+  position: fixed;
+  z-index: 6;
+  top: calc(58px + env(safe-area-inset-top));
+  left: calc(16px + env(safe-area-inset-left));
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 420ms ease, transform 420ms ease;
+}
+
+.stat-sheet.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.stat-sheet p {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin: 0;
+}
+
+.stat-sheet span {
+  font-size: 0.86rem;
+  color: rgba(150, 232, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-sheet small {
+  font-size: 0.62rem;
+  color: var(--dim);
+}
+
+.stat-sheet button {
+  padding: 2px 0 2px 6px;
+  font-size: 0.68rem;
+  color: rgba(190, 214, 232, 0.4);
+  border-left: 1px solid var(--hairline);
+  border-radius: 0;
+}
+
+.stat-sheet button:hover {
+  color: rgba(255, 150, 176, 0.7);
+}
+
+/* ---- 水面のUI ------------------------------------------------------ */
+
+.add-btn {
+  position: fixed;
+  z-index: 5;
+  left: calc(20px + env(safe-area-inset-left));
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  padding: 12px 20px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--glass);
+  color: rgba(226, 242, 252, 0.78);
+  font-size: 0.84rem;
+  letter-spacing: 0.12em;
+  backdrop-filter: blur(12px);
+  transition: opacity 700ms ease, border-color 200ms ease;
+}
+
+.add-btn:hover {
+  border-color: rgba(140, 230, 255, 0.34);
+}
+
+/* 参照画像の右下・丸い「沈む」 */
+.dive-btn {
+  position: fixed;
+  z-index: 5;
+  right: calc(22px + env(safe-area-inset-right));
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border: 1px solid rgba(190, 234, 255, 0.26);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 18%, rgba(214, 242, 255, 0.09), transparent 46%), var(--glass);
+  color: rgba(236, 248, 255, 0.9);
+  font-size: 0.92rem;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  backdrop-filter: blur(12px);
+  transition: opacity 700ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.dive-btn:hover {
+  border-color: rgba(150, 236, 255, 0.4);
+  box-shadow: 0 0 26px rgba(90, 220, 255, 0.12);
+}
+
+/* 直近の記録チップ。下端に静かに並ぶ（表示のみ） */
+.chips {
+  position: fixed;
+  z-index: 4;
+  left: 0;
+  right: 0;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  pointer-events: none;
+  transition: opacity 700ms ease;
+}
+
+.chips::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 32px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: rgba(196, 226, 244, 0.22);
+  transform: translateX(-50%);
+}
+
+.chips span {
+  max-width: 38vw;
+  overflow: hidden;
+  padding: 8px 14px;
+  border: 1px solid rgba(160, 224, 250, 0.12);
+  border-radius: 999px;
+  background: rgba(5, 13, 24, 0.4);
+  color: rgba(206, 228, 242, 0.6);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(10px);
+}
+
+.chips em {
+  margin-left: 6px;
+  color: rgba(130, 230, 255, 0.72);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 潜降が始まったら、水の上の道具はみんな薄れて消える */
+.app.is-sinking .icon-btn,
+.app.is-sinking .add-btn,
+.app.is-sinking .dive-btn,
+.app.is-sinking .chips,
+.app.is-sinking .stat-sheet {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 目：UIを隠して海だけを見る */
+.app.is-bare .icon-btn.menu-btn,
+.app.is-bare .add-btn,
+.app.is-bare .dive-btn,
+.app.is-bare .chips,
+.app.is-bare .stat-sheet {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app.is-bare .eye-btn {
+  color: rgba(212, 234, 248, 0.22);
+}
+
+/* ---- 水中：沈んだ記憶 ---------------------------------------------- */
+
+.stream {
+  position: fixed;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1100ms ease;
+}
+
+.app.is-under .stream {
+  opacity: 1;
+}
+
+.stream ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  will-change: transform;
+}
+
+/* 記録カードではなく、水中に浮かぶ小さな灯り */
+.stream li {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 58px;
+}
+
+.memory {
+  position: relative;
+  max-width: min(76vw, 300px);
+  padding: 10px 18px 11px;
+  border: 1px solid rgba(150, 222, 250, 0.13);
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 50% -20%, rgba(96, 220, 255, 0.09), transparent 60%),
+    rgba(6, 16, 29, 0.38);
+  box-shadow: 0 0 24px rgba(70, 180, 255, 0.055);
+  text-align: left;
+}
+
+/* ピルの下へ沈殿していく点線 */
+.memory::after {
+  content: "";
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  width: 1px;
+  height: 24px;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(126, 220, 255, 0.38) 0 2px,
+    transparent 2px 8px
+  );
+  opacity: 0.32;
+}
+
+.memory .m-title {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  color: rgba(238, 249, 255, 0.88);
+  font-size: 0.92rem;
+}
+
+.memory .m-title b {
+  overflow: hidden;
+  max-width: 58vw;
+  font-weight: 560;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.memory .m-title em {
+  flex: none;
+  color: rgba(126, 231, 255, 0.74);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.memory .m-date {
+  margin-top: 3px;
+  color: rgba(184, 208, 226, 0.44);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+.stream-empty {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  margin: 0;
+  color: rgba(206, 228, 242, 0.42);
+  font-size: 0.85rem;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.stream-empty.is-hidden {
+  display: none;
+}
+
+.rise-btn {
+  position: fixed;
+  z-index: 6;
+  top: calc(16px + env(safe-area-inset-top));
+  left: calc(16px + env(safe-area-inset-left));
+  padding: 8px 15px;
+  border: 1px solid rgba(184, 231, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(9, 22, 38, 0.3);
+  color: rgba(216, 236, 248, 0.55);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease, color 200ms ease;
+}
+
+.app.is-under .rise-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.rise-btn:hover {
+  color: rgba(236, 248, 255, 0.85);
+}
+
+/* まだ深くへ続く ⌄⌄ */
+.deep-hint {
+  position: fixed;
+  z-index: 3;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  left: 50%;
+  width: 20px;
+  height: 17px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 600ms ease;
+  animation: hint-bob 3.4s ease-in-out infinite;
+}
+
+.deep-hint::before,
+.deep-hint::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid rgba(172, 226, 255, 0.7);
+  border-bottom: 1px solid rgba(172, 226, 255, 0.7);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.deep-hint::after {
+  top: 7px;
+}
+
+.deep-hint.is-on {
+  opacity: 0.55;
+}
+
+@keyframes hint-bob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(4px);
+  }
+}
+
+/* ---- 記録モーダル --------------------------------------------------- */
+
+.veil {
+  position: fixed;
+  z-index: 7;
+  inset: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(4, 14, 26, 0.1), rgba(0, 2, 7, 0.55) 80%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 460ms ease;
+}
+
+.veil.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.record-modal {
+  position: fixed;
+  z-index: 8;
+  top: 50%;
+  left: 50%;
+  width: min(340px, calc(100vw - 44px));
+  padding: 22px 22px 18px;
+  border: 1px solid rgba(160, 226, 250, 0.14);
+  border-radius: 18px;
+  background: rgba(4, 12, 23, 0.62);
+  backdrop-filter: blur(18px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -46%);
+  transition: opacity 460ms ease, transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.record-modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.modal-title {
+  margin: 0 0 16px;
+  color: rgba(198, 226, 244, 0.6);
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+}
+
+#titleInput {
+  width: 100%;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(150, 224, 250, 0.2);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+#titleInput::placeholder {
+  color: rgba(160, 186, 206, 0.36);
+}
+
+#titleInput:focus {
+  border-bottom-color: rgba(120, 230, 255, 0.5);
+}
+
+.minutes-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.minutes-row button {
+  padding: 9px 0;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  color: var(--dim);
+  font-size: 0.8rem;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.minutes-row button.is-active {
+  border-color: rgba(110, 230, 255, 0.4);
+  background: rgba(90, 220, 255, 0.06);
+  color: rgba(210, 244, 255, 0.9);
+}
+
+.minutes-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+
+.minutes-custom input {
+  width: 84px;
+  padding: 7px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: transparent;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.modal-actions button {
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+}
+
+#cancelBtn {
+  color: rgba(178, 202, 220, 0.5);
+}
+
+#submitBtn {
+  border: 1px solid rgba(120, 232, 255, 0.3);
+  background: radial-gradient(circle at 50% 0%, rgba(130, 240, 255, 0.14), transparent 62%), rgba(24, 110, 160, 0.22);
+  color: rgba(230, 250, 255, 0.92);
+}
