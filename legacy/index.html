@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Luminous Tide Prototype</title>
-    <link rel="stylesheet" href="styles.css?v=dive-flow-28" />
+    <link rel="stylesheet" href="styles.css?v=dive-flow-29" />
   </head>
   <body>
     <main class="app-shell">
@@ -31,6 +31,30 @@
       </button>
       <div class="dive-transition" aria-hidden="true"></div>
       <div id="surfaceChips" class="surface-chips is-hidden" aria-hidden="true"></div>
+
+      <button
+        class="top-icon top-menu"
+        id="menuButton"
+        type="button"
+        aria-label="記録の状態を表示"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+      </button>
+      <button
+        class="top-icon top-eye"
+        id="uiToggleButton"
+        type="button"
+        aria-label="UIを隠す"
+        aria-pressed="false"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 12c2.6-4 5.6-6 9-6s6.4 2 9 6c-2.6 4-5.6 6-9 6s-6.4-2-9-6z" />
+          <circle cx="12" cy="12" r="2.6" />
+          <line x1="5.5" y1="19" x2="18.5" y2="5" />
+        </svg>
+      </button>
 
       <section class="panel intro-panel" aria-label="現在の努力の状態">
         <p class="eyebrow">Luminous Tide</p>
@@ -133,6 +157,6 @@
 
     </main>
 
-    <script src="app.js?v=dive-flow-28"></script>
+    <script src="app.js?v=dive-flow-29"></script>
   </body>
 </html>

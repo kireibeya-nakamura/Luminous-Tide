@@ -22,6 +22,8 @@ const openDiveButton = document.querySelector("#openDiveButton");
 const closeDiveButton = document.querySelector("#closeDiveButton");
 const surfaceChips = document.querySelector("#surfaceChips");
 const diveMore = document.querySelector("#diveMore");
+const menuButton = document.querySelector("#menuButton");
+const uiToggleButton = document.querySelector("#uiToggleButton");
 
 const STORAGE_KEY = "luminous-tide-prototype-v1";
 const MAX_PARTICLES_DESKTOP = 1450;
@@ -1442,6 +1444,19 @@ function effortSourcePoint() {
     y: rect.top + rect.height / 2,
   };
 }
+
+// The thin menu glyph breathes the stats in and out; the eye hides the whole
+// UI so only the sea is left. Both are quiet toggles, nothing slides.
+menuButton?.addEventListener("click", () => {
+  const open = appShell?.classList.toggle("is-stats-open") ?? false;
+  menuButton.setAttribute("aria-expanded", String(open));
+});
+
+uiToggleButton?.addEventListener("click", () => {
+  const hidden = appShell?.classList.toggle("is-ui-hidden") ?? false;
+  uiToggleButton.setAttribute("aria-pressed", String(hidden));
+  uiToggleButton.setAttribute("aria-label", hidden ? "UIを表示" : "UIを隠す");
+});
 
 openRecordButton?.addEventListener("click", openRecordPanel);
 closeRecordButton?.addEventListener("click", closeRecordPanel);
