@@ -20,6 +20,8 @@ const closeRecordButton = document.querySelector("#closeRecordButton");
 const diveView = document.querySelector("#diveView");
 const openDiveButton = document.querySelector("#openDiveButton");
 const closeDiveButton = document.querySelector("#closeDiveButton");
+const surfaceChips = document.querySelector("#surfaceChips");
+const diveMore = document.querySelector("#diveMore");
 
 const STORAGE_KEY = "luminous-tide-prototype-v1";
 const MAX_PARTICLES_DESKTOP = 1450;
@@ -345,6 +347,7 @@ function renderDiveLog() {
 
   diveLogList.innerHTML = "";
   diveEmpty?.classList.toggle("is-hidden", records.length > 0);
+  diveMore?.classList.toggle("is-hidden", records.length < 4);
 
   const maxIndex = Math.max(records.length - 1, 1);
   for (const [index, record] of records.entries()) {
@@ -353,8 +356,8 @@ function renderDiveLog() {
     const item = document.createElement("li");
     item.className = `dive-log-item ${index % 2 === 0 ? "is-right" : "is-left"}`;
     item.style.color = category.color;
-    item.style.opacity = String(clamp(0.96 - depth * 0.34, 0.52, 0.96));
-    item.style.setProperty("--dive-scale", String(clamp(1 - depth * 0.08, 0.9, 1)));
+    item.style.opacity = String(clamp(0.96 - depth * 0.55, 0.3, 0.96));
+    item.style.setProperty("--dive-scale", String(clamp(1 - depth * 0.1, 0.86, 1)));
 
     const row = document.createElement("div");
     row.className = "dive-log-title-row";
@@ -385,7 +388,36 @@ function updateDiveScrollDepth() {
   diveView.style.setProperty("--dive-dark-opacity", (depth * 0.72).toFixed(3));
   diveView.style.setProperty("--dive-surface-offset", `${(-depth * 122).toFixed(1)}px`);
   diveView.style.setProperty("--dive-surface-opacity", clamp(0.78 - depth * 0.66, 0.1, 0.78).toFixed(3));
-  diveView.style.setProperty("--dive-light-opacity", clamp(0.76 - depth * 0.36, 0.34, 0.76).toFixed(3));
+  diveView.style.setProperty("--dive-light-opacity", clamp(0.5 - depth * 0.3, 0.16, 0.5).toFixed(3));
+}
+
+// The reference art's surface screen carries the latest records as small quiet
+// chips along the bottom edge — an at-a-glance echo of what has been sunk.
+function renderSurfaceChips() {
+  if (!surfaceChips) return;
+
+  const records = data.records
+    .slice()
+    .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
+    .slice(0, 3);
+
+  surfaceChips.innerHTML = "";
+  surfaceChips.classList.toggle("is-hidden", records.length === 0);
+
+  for (const record of records) {
+    const category = categories[record.category] ?? categories.portfolio;
+    const chip = document.createElement("span");
+    chip.className = "surface-chip";
+
+    const label = document.createElement("span");
+    label.textContent = category.label;
+
+    const time = document.createElement("em");
+    time.textContent = minutesToLabel(record.minutes);
+
+    chip.append(label, time);
+    surfaceChips.append(chip);
+  }
 }
 
 function updateUi() {
@@ -394,6 +426,7 @@ function updateUi() {
   totalTimeEl.textContent = minutesToLabel(m.totalMinutes);
   streakDaysEl.textContent = String(m.streakDays);
   renderDiveLog();
+  renderSurfaceChips();
 
   const today = localDateKey();
   const todayRecords = data.records
@@ -1088,6 +1121,95 @@ function drawBubbles() {
   ctx.restore();
 }
 
+// The surface seen from below. Once we have crossed the line, everything above
+// it becomes the underside of the water — dark wave backs, moonlight pooling
+// through the crossing, and thin god rays sinking from it. Drawn in screen
+// space and anchored to the kept line, so the whole thing rises away naturally
+// as you scroll deeper into the log.
+function drawUnderwaterSurface(bounds, sceneLift, time, lineY) {
+  const crossed = clamp((diveProgress - 0.55) / 0.45, 0, 1);
+  if (crossed <= 0.01 || lineY <= -60) return;
+  const recede = 1 - clamp(diveScrollDepth, 0, 1) * 0.85;
+  const strength = crossed * recede;
+
+  const mobile = width < 760;
+  const cx = width * (mobile ? 0.62 : 0.6);
+
+  ctx.save();
+
+  // Underside band: from the top of the screen down to the wavy line itself,
+  // so its lower edge follows the same swell as the kept surface line.
+  ctx.beginPath();
+  ctx.moveTo(0, -4);
+  ctx.lineTo(width, -4);
+  for (let x = width; x >= 0; x -= 16) {
+    ctx.lineTo(x, surfaceY(x, bounds, time) - sceneLift - 0.5);
+  }
+  ctx.closePath();
+  const band = ctx.createLinearGradient(0, 0, 0, Math.max(lineY, 1));
+  band.addColorStop(0, `rgba(1, 4, 10, ${0.92 * crossed})`);
+  band.addColorStop(0.6, `rgba(4, 15, 28, ${0.88 * crossed})`);
+  band.addColorStop(1, `rgba(14, 46, 76, ${0.82 * crossed})`);
+  ctx.fillStyle = band;
+  ctx.fill();
+
+  ctx.globalCompositeOperation = "screen";
+
+  // Moonlight pooling through the surface.
+  const pool = ctx.createRadialGradient(cx, lineY - 6, 0, cx, lineY - 6, mobile ? 150 : 230);
+  pool.addColorStop(0, `rgba(168, 214, 250, ${0.2 * strength})`);
+  pool.addColorStop(0.5, `rgba(88, 158, 218, ${0.075 * strength})`);
+  pool.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = pool;
+  ctx.fillRect(0, Math.max(0, lineY - 170), width, 190);
+
+  // Backs of the waves hanging above the line.
+  const crests = mobile ? 4 : 5;
+  for (let i = 0; i < crests; i += 1) {
+    const y0 = lineY - 11 - i * (mobile ? 12 : 15);
+    if (y0 < -12) continue;
+    const amp = 2.4 + i * 1.5;
+    const alpha = (0.09 - i * 0.014) * strength;
+    if (alpha <= 0.004) continue;
+    ctx.beginPath();
+    for (let x = 0; x <= width; x += 16) {
+      const y =
+        y0 +
+        Math.sin(x * 0.016 + time * 0.5 + i * 1.7) * amp +
+        Math.sin(x * 0.041 - time * 0.31 + i) * amp * 0.4;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = `rgba(128, 196, 238, ${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // God rays sinking from the crossing, swaying very slowly.
+  const rayLen = height * 0.52;
+  for (let i = 0; i < 3; i += 1) {
+    const anchor = cx + (i - 1) * (mobile ? 58 : 96) + Math.sin(time * 0.07 + i * 2.1) * 24;
+    const lean = Math.sin(time * 0.05 + i * 1.3) * 30;
+    const w0 = (mobile ? 13 : 20) * (0.8 + i * 0.3);
+    const w1 = w0 * (2.5 + i * 0.4);
+    const alpha = (i === 1 ? 0.085 : 0.05) * strength;
+    const ray = ctx.createLinearGradient(0, lineY, 0, lineY + rayLen);
+    ray.addColorStop(0, `rgba(148, 203, 248, ${alpha})`);
+    ray.addColorStop(0.55, `rgba(108, 172, 232, ${alpha * 0.45})`);
+    ray.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = ray;
+    ctx.beginPath();
+    ctx.moveTo(anchor - w0, lineY);
+    ctx.lineTo(anchor + w0, lineY);
+    ctx.lineTo(anchor + lean + w1, lineY + rayLen);
+    ctx.lineTo(anchor + lean - w1, lineY + rayLen);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
 function updateDiveStage() {
   if (!appShell?.classList.contains("is-diving")) return;
 
@@ -1174,6 +1296,8 @@ function frame(now) {
     ctx.fillStyle = deepGrd;
     ctx.fillRect(0, lineY, width, height - lineY);
     ctx.restore();
+
+    drawUnderwaterSurface(bounds, sceneLift, time, lineY);
   }
 
   drawBubbles();

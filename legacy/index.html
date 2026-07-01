@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Luminous Tide Prototype</title>
-    <link rel="stylesheet" href="styles.css?v=dive-flow-27" />
+    <link rel="stylesheet" href="styles.css?v=dive-flow-28" />
   </head>
   <body>
     <main class="app-shell">
@@ -30,6 +30,7 @@
         潜る
       </button>
       <div class="dive-transition" aria-hidden="true"></div>
+      <div id="surfaceChips" class="surface-chips is-hidden" aria-hidden="true"></div>
 
       <section class="panel intro-panel" aria-label="現在の努力の状態">
         <p class="eyebrow">Luminous Tide</p>
@@ -127,10 +128,11 @@
           <ol id="diveLogList" class="dive-log-list"></ol>
           <p id="diveEmpty" class="dive-empty">まだ沈める記録がありません。</p>
         </div>
+        <div id="diveMore" class="dive-more is-hidden" aria-hidden="true"></div>
       </section>
 
     </main>
 
-    <script src="app.js?v=dive-flow-27"></script>
+    <script src="app.js?v=dive-flow-28"></script>
   </body>
 </html>

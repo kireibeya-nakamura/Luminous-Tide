@@ -168,7 +168,7 @@ button {
   position: fixed;
   z-index: 3;
   left: 50%;
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  bottom: calc(66px + env(safe-area-inset-bottom));
   min-height: 52px;
   border: 1px solid rgba(142, 224, 255, 0.24);
   border-radius: 999px;
@@ -205,6 +205,60 @@ button {
   transform: translate(-50%, 12px) scale(0.96);
 }
 
+/* Latest records resting along the bottom edge of the surface screen, like in
+   the reference art — quiet pills under a thin handle line. Display only. */
+.surface-chips {
+  position: fixed;
+  z-index: 2;
+  right: 0;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  left: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 520ms ease;
+}
+
+.surface-chips.is-hidden {
+  display: none;
+}
+
+.surface-chips::before {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  width: 34px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(196, 226, 244, 0.24);
+  transform: translateX(-50%);
+  content: "";
+}
+
+.surface-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  border: 1px solid rgba(150, 220, 255, 0.13);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(5, 14, 26, 0.44);
+  color: rgba(206, 230, 245, 0.62);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  backdrop-filter: blur(12px);
+}
+
+.surface-chip em {
+  color: rgba(126, 231, 255, 0.72);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
 /* The canvas itself renders the descent — plankton gathering into the glowing
    line and the camera sinking through it — so it stays in place (no CSS
    transform). The above-water chrome simply dims away as we leave the surface. */
@@ -216,9 +270,11 @@ button {
 .app-shell.is-diving .intro-panel,
 .app-shell.is-diving .record-fab,
 .app-shell.is-diving .dive-fab,
+.app-shell.is-diving .surface-chips,
 .app-shell.is-dive-returning .intro-panel,
 .app-shell.is-dive-returning .record-fab,
-.app-shell.is-dive-returning .dive-fab {
+.app-shell.is-dive-returning .dive-fab,
+.app-shell.is-dive-returning .surface-chips {
   opacity: 0;
   pointer-events: none;
   transition: opacity 650ms ease;
@@ -289,7 +345,7 @@ button {
   --dive-dark-opacity: 0;
   --dive-surface-offset: 0px;
   --dive-surface-opacity: 0.78;
-  --dive-light-opacity: 0.76;
+  --dive-light-opacity: 0.5;
   position: fixed;
   z-index: 5;
   inset: 0;
@@ -378,21 +434,18 @@ button {
     10px;
 }
 
-.dive-header h2 {
-  margin: 0;
-  color: rgba(235, 247, 255, 0.78);
-  font-size: 1.34rem;
-  font-weight: 520;
-  letter-spacing: 0.16em;
+/* The reference art has no heading underwater — only the thin return control. */
+.dive-header > div {
+  display: none;
 }
 
 .dive-close {
   min-height: 34px;
-  border: 1px solid rgba(184, 231, 255, 0.14);
+  border: 1px solid rgba(184, 231, 255, 0.12);
   border-radius: 999px;
   padding: 0 14px;
-  background: rgba(12, 28, 44, 0.55);
-  color: rgba(218, 236, 248, 0.68);
+  background: rgba(10, 24, 40, 0.32);
+  color: rgba(218, 236, 248, 0.6);
   font-size: 0.82rem;
   letter-spacing: 0.08em;
 }
@@ -407,27 +460,11 @@ button {
   padding: 8px 20px calc(22px + env(safe-area-inset-bottom));
 }
 
-.dive-log-wrap::before {
-  position: absolute;
-  top: 24px;
-  bottom: 46px;
-  left: 50%;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    rgba(125, 220, 255, 0.02),
-    rgba(127, 221, 255, 0.24) 24%,
-    rgba(109, 180, 255, 0.08) 78%,
-    rgba(125, 220, 255, 0)
-  );
-  content: "";
-}
-
 .dive-log-list {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 24px;
+  gap: 30px;
   height: 100%;
   margin: 0;
   padding: 24px 5px 92px;
@@ -442,57 +479,55 @@ button {
   display: none;
 }
 
+/* Records float in the water column as small quiet pills near the centre,
+   drifting slightly left/right — sunken memories, not cards. */
 .dive-log-item {
   position: relative;
   display: grid;
-  gap: 4px;
-  width: min(72%, 238px);
-  min-height: 58px;
-  border: 1px solid rgba(157, 225, 255, 0.13);
-  border-radius: 16px;
-  padding: 11px 13px;
+  gap: 5px;
+  justify-self: center;
+  width: fit-content;
+  max-width: min(82%, 260px);
+  border: 1px solid rgba(157, 225, 255, 0.11);
+  border-radius: 18px;
+  padding: 10px 18px 11px;
+  text-align: center;
   background:
-    radial-gradient(circle at 32% 0%, rgba(91, 226, 255, 0.1), transparent 58%),
-    rgba(6, 18, 31, 0.66);
+    radial-gradient(circle at 50% 0%, rgba(91, 226, 255, 0.08), transparent 62%),
+    rgba(6, 18, 31, 0.42);
   box-shadow:
-    0 14px 34px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    0 0 26px rgba(80, 190, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .dive-log-item.is-left {
-  justify-self: start;
-  transform: translateX(24px) scale(var(--dive-scale, 1));
+  transform: translateX(-26px) scale(var(--dive-scale, 1));
 }
 
 .dive-log-item.is-right {
-  justify-self: end;
-  transform: translateX(-36px) scale(var(--dive-scale, 1));
+  transform: translateX(30px) scale(var(--dive-scale, 1));
 }
 
-.dive-log-item::before {
+/* A faint dotted stream trailing below each memory, like settling plankton. */
+.dive-log-item::after {
   position: absolute;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 14px currentColor;
+  top: calc(100% + 6px);
+  left: 50%;
+  width: 1px;
+  height: 22px;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(126, 220, 255, 0.4) 0 2px,
+    transparent 2px 8px
+  );
+  opacity: 0.3;
   content: "";
-  transform: translateY(-50%);
-}
-
-.dive-log-item.is-left::before {
-  right: -20px;
-}
-
-.dive-log-item.is-right::before {
-  left: -20px;
 }
 
 .dive-log-title-row {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
   min-width: 0;
 }
@@ -536,6 +571,56 @@ button {
 
 .dive-empty.is-hidden {
   display: none;
+}
+
+/* Double chevron at the bottom of the dive — there is more, deeper. Fades away
+   as you scroll down (tied to --dive-scroll). */
+.dive-more {
+  position: absolute;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 1;
+  width: 22px;
+  height: 18px;
+  opacity: calc(0.5 * (1 - var(--dive-scroll)));
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: dive-more-bob 3.2s ease-in-out infinite;
+}
+
+.dive-more::before,
+.dive-more::after {
+  position: absolute;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid rgba(172, 226, 255, 0.75);
+  border-bottom: 1px solid rgba(172, 226, 255, 0.75);
+  content: "";
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.dive-more::before {
+  top: 0;
+}
+
+.dive-more::after {
+  top: 7px;
+}
+
+.dive-more.is-hidden {
+  display: none;
+}
+
+@keyframes dive-more-bob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(4px);
+  }
 }
 
 @keyframes dive-particles {
@@ -994,7 +1079,7 @@ form {
 
   .record-fab {
     left: 16px;
-    bottom: calc(18px + env(safe-area-inset-bottom));
+    bottom: calc(88px + env(safe-area-inset-bottom));
     width: min(214px, calc(100vw - 132px));
     min-height: 50px;
     transform: none;
@@ -1007,7 +1092,7 @@ form {
   .dive-fab {
     z-index: 4;
     right: max(16px, calc(100vw - 377px));
-    bottom: 92px;
+    bottom: calc(88px + env(safe-area-inset-bottom));
     width: 66px;
     height: 66px;
     background:
@@ -1036,20 +1121,21 @@ form {
   }
 
   .dive-log-list {
-    gap: 22px;
+    gap: 26px;
     padding-top: 18px;
   }
 
   .dive-log-item {
-    width: min(72%, 238px);
+    width: fit-content;
+    max-width: min(82%, 250px);
   }
 
   .dive-log-item.is-left {
-    transform: translateX(24px) scale(var(--dive-scale, 1));
+    transform: translateX(-20px) scale(var(--dive-scale, 1));
   }
 
   .dive-log-item.is-right {
-    transform: translateX(-36px) scale(var(--dive-scale, 1));
+    transform: translateX(24px) scale(var(--dive-scale, 1));
   }
 
   h1 {
